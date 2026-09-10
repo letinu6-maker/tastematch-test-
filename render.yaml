@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: tastematch-test
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: VISITSEOUL_API_KEY
+        sync: false

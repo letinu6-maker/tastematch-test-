@@ -369,6 +369,7 @@
 
 <div class="wrap"><div class="app" id="app"></div></div>
 
+<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=750ff17cc2e1fc96c2d87f421e0345f6&autoload=false"></script>
 <script>
 (function(){
   'use strict';
@@ -791,6 +792,181 @@
   }
 
   /* ============================================================
+     카카오맵 — 실제 지도(위 mapSVG는 카카오맵 로드 실패 시를 대비해 남겨둠)
+     ============================================================ */
+
+  var kakaoReady = false;
+  var kakaoWaiters = [];
+  function whenKakaoReady(cb){
+    if(kakaoReady){ cb(); return; }
+    kakaoWaiters.push(cb);
+    if(window.kakao && kakao.maps && kakao.maps.load && !whenKakaoReady._loading){
+      whenKakaoReady._loading = true;
+      kakao.maps.load(function(){
+        kakaoReady = true;
+        var ws = kakaoWaiters; kakaoWaiters = [];
+        ws.forEach(function(fn){ try{ fn(); }catch(e){} });
+      });
+    }
+  }
+  function radiusToLevel(km){
+    if(km <= 0.5) return 4;
+    if(km <= 1) return 5;
+    if(km <= 2) return 6;
+    return 7;
+  }
+
+  function drawPlacesMap(){
+    var el = document.getElementById('kmap-places');
+    if(!el || !window.kakao || !kakao.maps) return;
+    var p = activePersonaProfile();
+    var rec = recommend(p);
+    var center = new kakao.maps.LatLng(state.origin.lat, state.origin.lng);
+    var map = new kakao.maps.Map(el, { center:center, level:radiusToLevel(state.radiusKm) });
+    new kakao.maps.Circle({
+      map:map, center:center, radius:state.radiusKm * 1000,
+      strokeWeight:1, strokeColor:'#26225B', strokeOpacity:.45, strokeStyle:'shortdash',
+      fillColor:'#26225B', fillOpacity:.05
+    });
+    var meOverlay = new kakao.maps.CustomOverlay({
+      position:center, yAnchor:.5,
+      content:'<div style="width:14px;height:14px;border-radius:50%;background:#FFA300;border:3px solid #26225B;box-shadow:0 0 0 4px rgba(255,163,0,.28)"></div>'
+    });
+    meOverlay.setMap(map);
+    rec.list.slice(0, 10).forEach(function(e, i){
+      var m = e.menu;
+      var pos = new kakao.maps.LatLng(m.lat, m.lng);
+      var sel = m.id === state.selectedId;
+      var col = sel ? '#26225B' : (i < 3 ? '#C8102E' : '#54585A');
+      var overlay = new kakao.maps.CustomOverlay({
+        position:pos, yAnchor:1, zIndex: sel ? 10 : 1,
+        content:'<div data-mapmenu="' + m.id + '" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;transform:translateY(2px)">' +
+          '<div style="background:' + col + ';color:#fff;font:700 11px/1 monospace;padding:5px 7px;border-radius:14px;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.25);white-space:nowrap">' + (i + 1) + '</div>' +
+          '<div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid ' + col + ';margin-top:-1px"></div></div>'
+      });
+      overlay.setMap(map);
+    });
+    kakao.maps.event.addListener(map, 'click', function(){}); /* no-op: keeps overlays interactive on some browsers */
+    setTimeout(function(){
+      el.querySelectorAll('[data-mapmenu]').forEach(function(node){
+        node.addEventListener('click', function(){
+          var mid = node.getAttribute('data-mapmenu');
+          state.activeMenu = mid;
+          state.screen = 'menu'; render();
+          fetchRealPlaceIfNeeded(mid);
+        });
+      });
+    }, 0);
+  }
+
+  function drawMenuMap(){
+    var m = MENUS.filter(function(x){ return x.id === state.activeMenu; })[0];
+    var el = document.getElementById('kmap-menu');
+    if(!m || !el || !window.kakao || !kakao.maps) return;
+    var origin = new kakao.maps.LatLng(state.origin.lat, state.origin.lng);
+    var menuPos = new kakao.maps.LatLng(m.lat, m.lng);
+    var bounds = new kakao.maps.LatLngBounds();
+    bounds.extend(origin); bounds.extend(menuPos);
+    var map = new kakao.maps.Map(el, { center:origin, level:6 });
+    new kakao.maps.CustomOverlay({
+      position:origin, yAnchor:.5, map:map,
+      content:'<div style="width:13px;height:13px;border-radius:50%;background:#FFA300;border:3px solid #26225B"></div>'
+    });
+    new kakao.maps.CustomOverlay({
+      position:menuPos, yAnchor:1, map:map,
+      content:'<div style="background:#54585A;color:#fff;font:700 10px/1 monospace;padding:4px 7px;border-radius:12px;border:2px solid #fff;white-space:nowrap">샘플 위치</div>'
+    });
+    var real = state.placeCache[m.id];
+    if(real && real.ok && real.lat && real.lng){
+      var rp = new kakao.maps.LatLng(real.lat, real.lng);
+      bounds.extend(rp);
+      new kakao.maps.CustomOverlay({
+        position:rp, yAnchor:1, map:map,
+        content:'<div style="background:#C8102E;color:#fff;font:700 10.5px/1.2 -apple-system,sans-serif;padding:5px 8px;border-radius:12px;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.3);white-space:nowrap">🍽 ' + esc(real.name) + '</div>'
+      });
+    }
+    map.setBounds(bounds, 40, 40, 40, 40);
+  }
+
+  function ensureKakaoOrFallback(el, tries){
+    tries = tries || 0;
+    if(window.kakao && kakao.maps) return;
+    if(!document.body.contains(el)) return;
+    if(tries > 6){
+      el.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--ink-3);font-size:12px;text-align:center;padding:0 16px">지도를 불러오지 못했어요.<br>잠시 후 다시 열어보세요.</div>';
+      return;
+    }
+    setTimeout(function(){ ensureKakaoOrFallback(el, tries + 1); }, 700);
+  }
+
+  function renderMaps(){
+    var pEl = document.getElementById('kmap-places');
+    var mEl = document.getElementById('kmap-menu');
+    if(pEl){
+      whenKakaoReady(function(){ if(state.screen === 'places' && document.getElementById('kmap-places')) drawPlacesMap(); });
+      ensureKakaoOrFallback(pEl);
+    }
+    if(mEl){
+      whenKakaoReady(function(){ if(state.screen === 'menu' && document.getElementById('kmap-menu')) drawMenuMap(); });
+      ensureKakaoOrFallback(mEl);
+    }
+  }
+
+  /* 비짓서울 API에서 이 메뉴 카테고리에 해당하는 실제 등록 매장을 찾아
+     상세 화면 지도에 함께 표시합니다 (매칭 점수 자체는 계속 샘플 데이터 기준). */
+  function fetchRealPlaceIfNeeded(id){
+    if(state.placeCache[id]) return;
+    var m = MENUS.filter(function(x){ return x.id === id; })[0];
+    if(!m) return;
+    state.placeCache[id] = { loading:true };
+    var keyword = m.cat.split('·')[0].trim();
+
+    function refresh(){
+      if(state.screen === 'menu' && state.activeMenu === id){ state.keepScroll = true; render(); }
+    }
+    function tryCids(cids, i){
+      if(i >= cids.length){ state.placeCache[id] = { ok:false }; refresh(); return; }
+      fetch('/api/contents/' + encodeURIComponent(cids[i]))
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+          var info = d.ok && d.data && d.data.data;
+          var tr = info && info.traffic;
+          var lat = tr && parseFloat(tr.map_position_y);
+          var lng = tr && parseFloat(tr.map_position_x);
+          if(info && lat && lng && !isNaN(lat) && !isNaN(lng)){
+            var isRestaurant = !!(info.restaurant && info.restaurant.type &&
+              info.restaurant.type.some(function(t){ return t.code_nm === '음식점'; }));
+            state.placeCache[id] = {
+              ok:true, name:info.post_sj, addr:(tr.new_adres || tr.adres || ''),
+              lat:lat, lng:lng, isRestaurant:isRestaurant
+            };
+            refresh();
+          } else {
+            tryCids(cids, i + 1);
+          }
+        })
+        .catch(function(){ tryCids(cids, i + 1); });
+    }
+
+    fetch('/api/contents?' + new URLSearchParams({ keyword:keyword, lang_code_id:'ko' }))
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        var items = (data.ok && data.data && data.data.data) || [];
+        var cids = items.slice(0, 4).map(function(it){ return it.cid; }).filter(Boolean);
+        tryCids(cids, 0);
+      })
+      .catch(function(){ state.placeCache[id] = { ok:false }; refresh(); });
+  }
+
+  function realPlaceNoteHtml(m){
+    var c = state.placeCache[m.id];
+    if(!c || c.loading) return '<p class="fine" style="margin-top:8px">🔎 비짓서울 API에서 이 카테고리의 실제 등록 매장을 찾는 중…</p>';
+    if(!c.ok) return '<p class="fine" style="margin-top:8px">이 카테고리로 실제 등록된 매장을 찾지 못했어요. (API 키 승인 전이거나 등록된 콘텐츠가 없을 수 있어요)</p>';
+    return '<p class="fine" style="margin-top:8px">🍽 지도의 빨간 표시는 비짓서울 API에 실제 등록된 ' + (c.isRestaurant ? '식당' : '장소') +
+      ' <b>' + esc(c.name) + '</b>' + (c.addr ? ' · ' + esc(c.addr) : '') + '입니다.</p>';
+  }
+
+  /* ============================================================
      캐릭터 일러스트 (탐색 축 = 모자 / 분위기 축 = 포즈)
      ============================================================ */
 
@@ -963,6 +1139,7 @@
     showOff: false,
     geoMsg: '',
     liveCache: {},
+    placeCache: {},
     profile: {
       natKey: null, natCustom: '',
       explore: null, atmosphere: null, spice: null,
@@ -1336,7 +1513,7 @@
           '<span class="pinico">📍</span><span class="l"><span class="k">현재 위치' + (state.origin.live ? ' · GPS' : '') + '</span>' +
           '<span class="v">' + esc(state.origin.label) + '</span></span>' +
           '<span class="chev">' + (state.showLoc ? '닫기' : '변경') + '</span></button>' + locPanel() + '</div>' +
-        '<div class="mapwrap">' + mapSVG(rec.list, state.radiusKm, state.selectedId) + '</div>' +
+        '<div class="mapwrap"><div id="kmap-places" style="width:100%;height:248px"></div></div>' +
         '<div class="radrow"><span class="muted">반경</span>' + radChips +
           '<span class="cnt num">' + rec.list.length + '곳</span></div>' +
         '<div class="pad" style="padding-top:14px">' +
@@ -1344,7 +1521,7 @@
           '<p class="muted" style="margin:0 0 13px">매치도 = 국적 선호 26% · 매운맛 20% · <b>거리 18%</b> · 탐색 성향 16% · 분위기 12% · 화제성 8%</p>' +
           notes +
           '<div style="margin-top:12px">' + body + '</div>' +
-          '<p class="fine" style="margin-top:16px">지도는 비짓서울 API 관광콘텐츠의 위경도 좌표를 평면 투영해 그렸습니다. 거리·도보 시간은 직선거리 기준 추정값입니다.</p>' +
+          '<p class="fine" style="margin-top:16px">지도는 카카오맵 실제 지도입니다. 표시된 위치는 비짓서울 API 음식 콘텐츠 구조를 본뜬 샘플 좌표이며, 거리·도보 시간은 직선거리 기준 추정값입니다.</p>' +
         '</div>' +
       '</div>' + tabs('places') + '</div>';
   }
@@ -1381,9 +1558,10 @@
       '<div class="sect"><div class="muted" style="font-size:11.5px">' + esc(m.place) + ' · ' + esc(m.gu) + ' · ' + esc(m.cat) + '</div>' +
         '<p class="body-copy" style="margin-top:9px">' + esc(m.blurb) + '</p></div>' +
       '<div class="sect"><h3 class="sect-title">여기서 가는 길</h3>' +
-        '<div class="mapwrap mini">' + mapSVG([e], Math.max(0.4, e.km * 1.25), m.id, { h:180, hideLabel:true }) + '</div>' +
+        '<div class="mapwrap mini"><div id="kmap-menu" style="width:100%;height:180px"></div></div>' +
         '<div class="kv" style="margin-top:4px"><span class="k">' + esc(state.origin.label) + '에서</span>' +
-        '<span class="v num">' + fmtDist(e.km) + ' · 도보 ' + walkMin(e.km) + '분</span></div></div>' +
+        '<span class="v num">' + fmtDist(e.km) + ' · 도보 ' + walkMin(e.km) + '분</span></div>' +
+        realPlaceNoteHtml(m) + '</div>' +
       '<div class="sect"><h3 class="sect-title">이 점수가 나온 이유</h3><div class="bars">' + bars + '</div></div>' +
       '<div class="sect"><h3 class="sect-title">내 조건과 대조</h3>' +
         '<div class="kv"><span class="k">거리</span><span class="v num">' + fmtDist(e.km) + ' (반경 ' + fmtRadius(state.radiusKm) + ' 기준)</span></div>' +
@@ -1539,6 +1717,7 @@
       if(card) card.scrollIntoView({ block:'center', behavior:'smooth' });
     }
     state.scrollToSel = false;
+    renderMaps();
   }
 
   function toggleIn(arr, key){
@@ -1703,7 +1882,8 @@
         state.keepScroll = true; render(); break;
 
       case 'menu':
-        state.activeMenu = key; state.screen = 'menu'; render(); break;
+        state.activeMenu = key; state.screen = 'menu'; render();
+        fetchRealPlaceIfNeeded(key); break;
       case 'type':
         state.openType = key; state.screen = 'type'; render(); break;
       case 'preview':

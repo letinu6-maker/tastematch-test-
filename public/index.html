@@ -369,7 +369,8 @@
 
 <div class="wrap"><div class="app" id="app"></div></div>
 
-<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=750ff17cc2e1fc96c2d87f421e0345f6&autoload=false"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
 (function(){
   'use strict';
@@ -454,118 +455,294 @@
       kw:['대표 메뉴','후기 1위','검증된 인기'] }
   };
 
-  var MENUS = [
-    { id:'galbi', name:'옛날 등갈비찜', place:'마포 등갈비 골목', gu:'마포구', cat:'한식 · 고기',
-      spice:6, vibe:'local', novelty:'mid', buzz:88, buzzNote:'최근 30일 SNS 언급 +340%',
-      allergens:['soy','gluten','sesame'], veganOk:[], halal:false,
-      top:['japan','taiwan','hongkong'], prefBase:76,
-      blurb:'연탄불에 구운 등갈비를 손으로 뜯어 먹는 한국식 바비큐. 양념이 진하고 살이 부드럽습니다.',
-      tip:'남은 양념에 볶음밥을 시켜 마무리하는 게 현지식입니다.' },
-    { id:'nakji', name:'무교동 낙지볶음', place:'무교동 낙지골목', gu:'중구', cat:'한식 · 해산물',
-      spice:9, vibe:'local', novelty:'exotic', buzz:44, buzzNote:'현지 직장인 점심 수요 꾸준',
-      allergens:['mollusk','soy','gluten','sesame'], veganOk:[], halal:false,
-      top:['china','hongkong','singapore'], prefBase:64,
-      blurb:'서울에서 가장 매운 음식으로 꼽히는 볶음 요리. 낙지의 식감과 고추장의 직선적인 매운맛이 특징입니다.',
-      tip:'계란찜을 같이 시키면 매운맛을 눌러줍니다. 초보자는 "덜 맵게"를 꼭 말하세요.' },
-    { id:'mulhoe', name:'통영식 물회', place:'서대문 수산시장 골목', gu:'서대문구', cat:'한식 · 해산물',
-      spice:4, vibe:'mixed', novelty:'exotic', buzz:52, buzzNote:'여름철 검색량 4배 상승',
-      allergens:['fish','mollusk','soy','sesame'], veganOk:['pesco'], halal:false,
-      top:['japan','taiwan'], prefBase:61,
-      blurb:'찬 육수에 회를 말아 먹는 여름 음식. 새콤달콤한 국물에 얼음이 함께 나옵니다.',
-      tip:'국물을 반쯤 먹고 소면이나 밥을 말아 넣는 것이 정석입니다.' },
-    { id:'kimbap', name:'광장시장 마약김밥', place:'광장시장', gu:'종로구', cat:'분식 · 시장',
-      spice:1, vibe:'trendy', novelty:'familiar', buzz:79, buzzNote:'시장 먹거리 콘텐츠 상위 노출',
-      allergens:['egg','gluten','soy','sesame'], veganOk:[], halal:false,
-      top:['usa','uk','canada','australia','france','germany'], prefBase:78,
-      blurb:'겨자 간장에 찍어 먹는 한 입 크기 김밥. 시장 한복판에서 서서 먹는 경험까지가 메뉴입니다.',
-      tip:'겨자 간장은 생각보다 강합니다. 처음에는 살짝만 찍어보세요.' },
-    { id:'sujebi', name:'사찰식 들깨수제비', place:'인사동 골목 안쪽', gu:'종로구', cat:'한식 · 채식',
-      spice:0, vibe:'quiet', novelty:'exotic', buzz:31, buzzNote:'채식 여행자 커뮤니티에서 언급',
-      allergens:['gluten','sesame'], veganOk:['vegan','lacto','ovo','pesco'], halal:true,
-      top:['germany','france','uk'], prefBase:58,
-      blurb:'고기 육수를 쓰지 않는 사찰 방식의 수제비. 들깨의 고소한 맛으로만 국물을 냅니다.',
-      tip:'채식·할랄 조건을 모두 만족하는 몇 안 되는 전통 메뉴입니다.' },
-    { id:'yangkkochi', name:'할랄 양꼬치', place:'이태원 이슬람거리', gu:'용산구', cat:'구이 · 할랄',
-      spice:5, vibe:'trendy', novelty:'mid', buzz:66, buzzNote:'무슬림 여행자 리뷰 증가',
-      allergens:['sesame'], veganOk:[], halal:true,
-      top:['malaysia','indonesia','singapore'], prefBase:72,
-      blurb:'할랄 인증 양고기를 숯불에 구워 쯔란 향신료에 찍어 먹습니다. 이태원 중앙성원 주변에 밀집해 있습니다.',
-      tip:'꼬치는 직접 돌려가며 구워야 합니다. 다 익으면 향신료 접시에 그대로 굴리세요.' },
-    { id:'dakhanmari', name:'명동 닭한마리', place:'명동 칼국수 골목', gu:'중구', cat:'한식 · 탕',
-      spice:2, vibe:'trendy', novelty:'mid', buzz:71, buzzNote:'겨울철 관광객 방문 1순위',
-      allergens:['gluten','soy'], veganOk:[], halal:false,
-      top:['japan','taiwan','hongkong','thailand'], prefBase:80,
-      blurb:'닭 한 마리를 통째로 끓여 먹는 맑은 탕. 매운 양념장은 따로 나와 원하는 만큼 넣습니다.',
-      tip:'닭을 다 먹은 뒤 칼국수 사리를 넣어야 진짜 마무리입니다.' },
-    { id:'golbaengi', name:'을지로 골뱅이무침', place:'을지로 노가리 골목', gu:'중구', cat:'술안주 · 노포',
-      spice:7, vibe:'local', novelty:'exotic', buzz:58, buzzNote:'을지로 레트로 콘텐츠와 함께 상승',
-      allergens:['mollusk','gluten','soy','sesame'], veganOk:[], halal:false,
-      top:['china','vietnam'], prefBase:57,
-      blurb:'골뱅이를 매콤새콤하게 무쳐 소면과 함께 먹는 노포 안주. 야외 테이블 문화가 함께 따라옵니다.',
-      tip:'노가리와 생맥주를 곁들이는 것이 을지로식 정석 조합입니다.' },
-    { id:'vegan-tteok', name:'비건 로제 떡볶이', place:'연남동 비건 골목', gu:'마포구', cat:'분식 · 비건',
-      spice:5, vibe:'trendy', novelty:'mid', buzz:74, buzzNote:'비건 키워드 게시물 +180%',
-      allergens:['gluten','soy'], veganOk:['vegan','lacto','ovo','pesco'], halal:true,
-      top:['usa','uk','australia','germany'], prefBase:69,
-      blurb:'두유 베이스로 만든 떡볶이. 유제품 없이도 크리미한 질감을 냅니다.',
-      tip:'비건 튀김을 함께 시켜 국물에 찍어 먹는 조합이 인기입니다.' },
-    { id:'sindang', name:'신당동 즉석떡볶이', place:'신당동 떡볶이 타운', gu:'중구', cat:'분식',
-      spice:7, vibe:'mixed', novelty:'familiar', buzz:63, buzzNote:'K-콘텐츠 촬영지로 재조명',
-      allergens:['gluten','soy','egg','sesame'], veganOk:[], halal:false,
-      top:['thailand','philippines','vietnam','indonesia'], prefBase:75,
-      blurb:'테이블에서 직접 끓여 먹는 떡볶이. 라면 사리, 만두, 계란을 원하는 대로 추가합니다.',
-      tip:'마지막에 밥을 볶아 먹는 볶음밥이 이 메뉴의 진짜 목적입니다.' },
-    { id:'yukhoe', name:'한우 육회', place:'광장시장 육회 골목', gu:'종로구', cat:'한식 · 생고기',
-      spice:0, vibe:'trendy', novelty:'exotic', buzz:81, buzzNote:'해외 리뷰 영상 조회수 급증',
-      allergens:['egg','soy','sesame','beef'], veganOk:[], halal:false,
-      top:['japan','china','taiwan'], prefBase:70,
-      blurb:'참기름과 배를 곁들인 생소고기 요리. 노른자를 얹어 비벼 먹습니다.',
-      tip:'날달걀이 부담되면 빼달라고 할 수 있습니다. 참기름 향은 그대로 살아 있습니다.' },
-    { id:'baekban', name:'종로 생선구이 백반', place:'종로3가 백반 골목', gu:'종로구', cat:'한식 · 백반',
-      spice:1, vibe:'local', novelty:'familiar', buzz:26, buzzNote:'현지 직장인 점심 상권',
-      allergens:['fish','soy','sesame'], veganOk:['pesco'], halal:false,
-      top:['japan','taiwan'], prefBase:73,
-      blurb:'구운 생선 한 마리와 십여 가지 반찬이 함께 나오는 한 상. 한국인의 평범한 점심 그대로입니다.',
-      tip:'반찬은 대부분 무료로 더 받을 수 있습니다. 눈치 보지 말고 요청하세요.' },
-    { id:'buldak', name:'치즈 불닭', place:'홍대 걷고 싶은 거리', gu:'마포구', cat:'한식 · 매운맛',
-      spice:10, vibe:'trendy', novelty:'mid', buzz:94, buzzNote:'매운맛 챌린지 영상 최다 언급',
-      allergens:['dairy','gluten','soy','sesame'], veganOk:[], halal:false,
-      top:['thailand','malaysia','indonesia','philippines'], prefBase:71,
-      blurb:'한국에서 가장 매운 축에 드는 닭 요리. 녹인 치즈에 찍어 먹으며 매운맛을 조절합니다.',
-      tip:'우유나 치즈 추가 없이는 10점 매운맛을 끝까지 먹기 어렵습니다.' },
-    { id:'kongguksu', name:'서촌 콩국수', place:'서촌 골목', gu:'종로구', cat:'면 · 채식',
-      spice:0, vibe:'quiet', novelty:'exotic', buzz:37, buzzNote:'여름 한정 메뉴 검색 상승',
-      allergens:['soy','gluten','sesame'], veganOk:['vegan','lacto','ovo','pesco'], halal:true,
-      top:['japan','france'], prefBase:55,
-      blurb:'곱게 간 콩물에 국수를 말아 먹는 여름 음식. 간을 직접 맞춰 먹는 것이 특징입니다.',
-      tip:'소금을 조금씩 넣어가며 간을 맞추세요. 처음부터 많이 넣으면 되돌릴 수 없습니다.' },
-    { id:'dakgalbi', name:'동대문 닭갈비', place:'동대문 먹자골목', gu:'중구', cat:'한식 · 고기',
-      spice:8, vibe:'mixed', novelty:'mid', buzz:69, buzzNote:'심야 영업 콘텐츠로 유입 증가',
-      allergens:['gluten','soy','dairy','sesame'], veganOk:[], halal:false,
-      top:['china','vietnam','thailand'], prefBase:74,
-      blurb:'철판에 닭과 채소를 함께 볶아 먹는 요리. 치즈를 두르면 매운맛이 크게 줄어듭니다.',
-      tip:'새벽까지 여는 집이 많아 동대문 쇼핑 후 마지막 끼니로 좋습니다.' },
-    { id:'bibimbap', name:'할랄 비빔밥', place:'남산 한옥마을 인근', gu:'중구', cat:'한식 · 할랄',
-      spice:3, vibe:'mixed', novelty:'familiar', buzz:48, buzzNote:'할랄 인증 식당 안내 조회 증가',
-      allergens:['soy','sesame','egg'], veganOk:[], halal:true,
-      top:['malaysia','indonesia','singapore'], prefBase:76,
-      blurb:'할랄 인증 재료로 만든 비빔밥. 고추장 양을 직접 조절해 매운맛을 맞출 수 있습니다.',
-      tip:'고추장은 절반만 넣고 비벼본 뒤 추가하는 것이 안전합니다.' }
-  ];
+  /* ============================================================
+     장소 데이터 — 전부 비짓서울 API에서 실시간으로 받아옵니다.
+     임의로 만든 샘플 메뉴는 사용하지 않습니다.
+     ============================================================ */
+
+  var PLACES = [];   /* 비짓서울 API 콘텐츠에서 변환된 실제 장소 목록 */
 
   var NOVELTY_LABEL = { familiar:'익숙한 편', mid:'적당히 새로운', exotic:'낯선 메뉴' };
   var VIBE_LABEL = { local:'조용한 로컬', mixed:'중간', trendy:'트렌디한 핫플' };
 
-  /* 비짓서울 API 관광콘텐츠의 좌표 필드(위도·경도)에 해당하는 값 */
-  var COORDS = {
-    galbi:[37.5445,126.9515], nakji:[37.5680,126.9800], mulhoe:[37.5590,126.9420],
-    kimbap:[37.5701,126.9996], sujebi:[37.5740,126.9850], yangkkochi:[37.5345,126.9945],
-    dakhanmari:[37.5636,126.9840], golbaengi:[37.5665,126.9915], 'vegan-tteok':[37.5605,126.9255],
-    sindang:[37.5555,127.0175], yukhoe:[37.5705,127.0000], baekban:[37.5710,126.9915],
-    buldak:[37.5535,126.9235], kongguksu:[37.5790,126.9705], dakgalbi:[37.5665,127.0090],
-    bibimbap:[37.5590,126.9940]
+  /* 실제 API 응답에서 확인된 음식 카테고리 코드(음식 > 한식) */
+  var FOOD_CATEGORY_SEEDS = ['Cz9d1h6'];
+  var FOOD_KEYWORDS = ['한식', '맛집', '식당', '한정식', '국수', '고기', '해산물', '카페'];
+  var POOL_CACHE_KEY = 'tastematch.pool.v1';
+  var POOL_MAX = 48;
+
+  /* --- 외부 데이터 ① 국적별 음식 종류 선호 경향 (자체 큐레이션 지표) --- */
+  var NAT_CUISINE = {
+    japan:      { '한식':86,'분식':76,'카페':72,'중식':60,'일식':52,'양식':58,'기타':66 },
+    china:      { '한식':84,'분식':70,'카페':66,'중식':56,'일식':64,'양식':60,'기타':66 },
+    taiwan:     { '한식':85,'분식':78,'카페':74,'중식':58,'일식':66,'양식':60,'기타':67 },
+    hongkong:   { '한식':84,'분식':74,'카페':72,'중식':56,'일식':66,'양식':62,'기타':66 },
+    usa:        { '한식':80,'분식':72,'카페':70,'중식':62,'일식':68,'양식':54,'기타':64 },
+    uk:         { '한식':79,'분식':70,'카페':72,'중식':62,'일식':68,'양식':54,'기타':64 },
+    canada:     { '한식':80,'분식':71,'카페':70,'중식':62,'일식':68,'양식':54,'기타':64 },
+    australia:  { '한식':80,'분식':72,'카페':73,'중식':62,'일식':68,'양식':55,'기타':64 },
+    france:     { '한식':78,'분식':66,'카페':74,'중식':62,'일식':70,'양식':52,'기타':64 },
+    germany:    { '한식':78,'분식':67,'카페':71,'중식':62,'일식':68,'양식':53,'기타':64 },
+    vietnam:    { '한식':83,'분식':76,'카페':70,'중식':64,'일식':64,'양식':60,'기타':66 },
+    thailand:   { '한식':84,'분식':78,'카페':72,'중식':64,'일식':66,'양식':60,'기타':67 },
+    philippines:{ '한식':83,'분식':76,'카페':71,'중식':64,'일식':64,'양식':62,'기타':66 },
+    singapore:  { '한식':82,'분식':74,'카페':72,'중식':60,'일식':66,'양식':62,'기타':66 },
+    malaysia:   { '한식':81,'분식':73,'카페':70,'중식':62,'일식':64,'양식':60,'기타':65 },
+    indonesia:  { '한식':81,'분식':73,'카페':70,'중식':62,'일식':64,'양식':60,'기타':65 }
   };
-  MENUS.forEach(function(m){ var c = COORDS[m.id]; m.lat = c[0]; m.lng = c[1]; });
+  var NAT_CUISINE_DEFAULT = { '한식':80,'분식':72,'카페':70,'중식':62,'일식':66,'양식':60,'기타':65 };
+
+  /* --- 외부 데이터 ② 메뉴명·태그 기반 매운맛 추정 규칙 --- */
+  var SPICE_RULES = [
+    { re:/불닭|핵매운|아주\s*매운|엽기/, v:10 },
+    { re:/낙지볶음|쭈꾸미|짬뽕|불족발|매운\s*갈비|아구찜|해물찜|닭발|불막창/, v:8 },
+    { re:/떡볶이|닭갈비|김치찌개|순두부|부대찌개|매운|칼칼|얼큰/, v:7 },
+    { re:/제육|비빔|낙지|고추장|감자탕|해장국/, v:5 },
+    { re:/김치|된장|청국장|찌개|전골|탕\b/, v:4 },
+    { re:/삼겹|구이|갈비|불고기|치킨|족발|보쌈|전\b|튀김|고기/, v:3 },
+    { re:/설렁탕|곰탕|삼계탕|백반|한정식|국밥|죽\b|수제비|칼국수|콩국수|냉면|만두|김밥|초밥/, v:1 },
+    { re:/카페|커피|디저트|베이커리|빵|케이크|빙수|티\b|차\b/, v:0 }
+  ];
+
+  /* --- 외부 데이터 ③ 메뉴명 기반 알레르기 유발 성분 추정 규칙 --- */
+  var ALLERGEN_RULES = [
+    { key:'shellfish', re:/새우|게장|꽃게|랍스터|대게|갑각/ },
+    { key:'mollusk',   re:/오징어|낙지|문어|조개|굴\b|전복|골뱅이|홍합|쭈꾸미/ },
+    { key:'fish',      re:/생선|고등어|갈치|굴비|회\b|초밥|참치|멸치|장어|아구/ },
+    { key:'pork',      re:/돼지|삼겹|목살|제육|족발|보쌈|순대|돈까스|돈가스/ },
+    { key:'beef',      re:/소고기|한우|갈비|불고기|육회|곰탕|설렁탕|차돌/ },
+    { key:'dairy',     re:/치즈|우유|크림|버터|라떼|요거트/ },
+    { key:'egg',       re:/계란|달걀|에그|오믈렛/ },
+    { key:'gluten',    re:/국수|면\b|칼국수|라면|빵|만두|튀김|파스타|우동|김밥|떡볶이|수제비|돈까스/ },
+    { key:'buckwheat', re:/메밀|막국수/ },
+    { key:'nuts',      re:/견과|아몬드|호두|잣\b/ },
+    { key:'peanut',    re:/땅콩/ },
+    { key:'soy',       re:/두부|된장|간장|콩\b|순두부|청국장/ },
+    { key:'sesame',    re:/참깨|참기름|들깨|깨\b/ }
+  ];
+
+  function textOfInfo(info){
+    var r = info.restaurant || {};
+    var tags = (info.tag || []).join(' ');
+    return [info.post_sj || '', info.sumry || '', r.fd_reprsnt_menu || '',
+            tags, info.cate_depth || ''].join(' ');
+  }
+  function inferSpice(txt){
+    for(var i=0;i<SPICE_RULES.length;i++){ if(SPICE_RULES[i].re.test(txt)) return SPICE_RULES[i].v; }
+    return 3;
+  }
+  function inferAllergens(txt){
+    var out = [];
+    ALLERGEN_RULES.forEach(function(r){ if(r.re.test(txt)) out.push(r.key); });
+    return out;
+  }
+  function inferVibe(txt){
+    if(/오래가게|노포|골목|3대|원조|백반|전통/.test(txt)) return 'local';
+    if(/핫플|인스타|루프탑|브런치|팝업|디저트|카페|신상|트렌드/.test(txt)) return 'trendy';
+    return 'mixed';
+  }
+  function inferNovelty(txt){
+    if(/사찰|보양|전통주|한정식|육회|산낙지|과메기|홍어|곱창|막창|선지|순대|추어|보리굴비/.test(txt)) return 'exotic';
+    if(/치킨|카페|빵|피자|파스타|햄버거|김밥|비빔밥|불고기|만두|커피/.test(txt)) return 'familiar';
+    return 'mid';
+  }
+  function cuisineKind(info, txt){
+    var r = info.restaurant || {};
+    var kinds = (r.kind || []).map(function(k){ return k.code_nm || ''; }).join(' ');
+    var all = kinds + ' ' + (info.cate_depth || '');
+    if(/중식/.test(all)) return '중식';
+    if(/일식/.test(all)) return '일식';
+    if(/양식|서양|이탈|프렌치/.test(all)) return '양식';
+    if(/카페|디저트|베이커리/.test(all) || /카페|커피|베이커리|디저트/.test(txt)) return '카페';
+    if(/분식/.test(all) || /떡볶이|김밥|분식/.test(txt)) return '분식';
+    if(/한식/.test(all)) return '한식';
+    return '기타';
+  }
+  function guFromAddress(addr){
+    var m = /(\S+구)\s/.exec(addr || '');
+    return m ? m[1] : '서울';
+  }
+
+  /* 비짓서울 contents/info 응답 → 앱 내부 장소 객체 */
+  function placeFromInfo(info){
+    if(!info) return null;
+    var tr = info.traffic || {};
+    var lat = parseFloat(tr.map_position_y), lng = parseFloat(tr.map_position_x);
+    if(!lat || !lng || isNaN(lat) || isNaN(lng)) return null;
+    var r = info.restaurant || {};
+    var txt = textOfInfo(info);
+    var addr = tr.new_adres || tr.adres || '';
+    var dietary = (r.dietary || []).map(function(d){ return d.code_nm || String(d); });
+    var halalCodes = [].concat(r.halal || [], r.muslim || [], r.salam || [])
+                       .map(function(d){ return d.code_nm || String(d); });
+    var halal = halalCodes.length > 0 || /할랄|halal|무슬림/i.test(txt);
+    var veganOk = [];
+    if(dietary.length || /채식|비건|사찰음식|베지테리언|vegan/i.test(txt)){
+      veganOk = ['vegan', 'lacto', 'ovo', 'pesco'];
+    }
+    var kind = cuisineKind(info, txt);
+    return {
+      id: info.cid,
+      cid: info.cid,
+      name: info.post_sj || '이름 없음',
+      place: (tr.subway_info || addr || '서울').split(',')[0],
+      gu: guFromAddress(addr),
+      addr: addr,
+      kind: kind,
+      cat: (info.cate_depth || (' 음식 > ' + kind)).replace(/^\s*/, '').replace(/>/g, '·'),
+      spice: inferSpice(txt),
+      vibe: inferVibe(txt),
+      novelty: inferNovelty(txt),
+      allergens: inferAllergens(txt),
+      veganOk: veganOk,
+      dietaryLabels: dietary,
+      halal: halal,
+      halalLabels: halalCodes,
+      blurb: info.sumry || '비짓서울 API에 등록된 장소입니다.',
+      tip: r.fd_reprsnt_menu || '',
+      tel: (info.extra && info.extra.cmmn_telno) || '',
+      hours: (info.extra && info.extra.cmmn_use_time) || '',
+      closed: (info.extra && info.extra.closed_days) || '',
+      img: info.main_img || '',
+      subway: tr.subway_info || '',
+      tags: info.tag || [],
+      lat: lat, lng: lng
+    };
+  }
+
+  /* ---- 비짓서울 API에서 실제 장소 풀을 채워 넣기 ---- */
+  function readPoolCache(){
+    try{
+      var raw = localStorage.getItem(POOL_CACHE_KEY);
+      if(!raw) return null;
+      var o = JSON.parse(raw);
+      if(!o || !o.at || !o.places || !o.places.length) return null;
+      if(Date.now() - o.at > 1000 * 60 * 60 * 12) return null;   /* 12시간 캐시 */
+      return o.places;
+    }catch(e){ return null; }
+  }
+  function writePoolCache(places){
+    try{ localStorage.setItem(POOL_CACHE_KEY, JSON.stringify({ at:Date.now(), places:places })); }catch(e){}
+  }
+
+  function collectFoodCategoryCodes(catJson){
+    var out = [], seen = {};
+    function walk(node){
+      if(!node || typeof node !== 'object') return;
+      if(Array.isArray(node)){ node.forEach(walk); return; }
+      var code = node.com_ctgry_sn;
+      if(code && !seen[code]){
+        var label = [node.cate_depth, node.ctgry_nm, node.ctgry_name, node.name].join(' ');
+        if(/음식|맛집|식당|카페/.test(label)){ seen[code] = true; out.push(code); }
+      }
+      Object.keys(node).forEach(function(k){ walk(node[k]); });
+    }
+    walk(catJson);
+    return out;
+  }
+
+  function fetchJson(url){
+    return fetch(url).then(function(r){ return r.json(); }).catch(function(){ return null; });
+  }
+  function listCids(resp){
+    var items = (resp && resp.ok && resp.data && resp.data.data) || [];
+    if(!Array.isArray(items)) return [];
+    return items.map(function(it){ return it.cid; }).filter(Boolean);
+  }
+
+  function loadRealPlaces(force){
+    if(state.pool.status === 'loading') return;
+    if(state.pool.status === 'ready' && !force) return;
+
+    if(!force){
+      var cached = readPoolCache();
+      if(cached && cached.length){
+        PLACES = cached;
+        state.pool.status = 'ready';
+        state.pool.total = cached.length;
+        state.pool.done = cached.length;
+        state.pool.fromCache = true;
+        return;
+      }
+    }
+
+    state.pool.status = 'loading';
+    state.pool.done = 0;
+    state.pool.total = 0;
+    state.pool.error = '';
+    PLACES = [];
+
+    /* 1단계 — 음식 카테고리 코드를 찾고, 그 카테고리의 콘텐츠 목록을 모은다 */
+    fetchJson('/api/category').then(function(catJson){
+      var codes = FOOD_CATEGORY_SEEDS.slice();
+      collectFoodCategoryCodes(catJson).forEach(function(c){
+        if(codes.indexOf(c) < 0) codes.push(c);
+      });
+      codes = codes.slice(0, 6);
+
+      var listCalls = [];
+      codes.forEach(function(code){
+        [1, 2].forEach(function(pageNo){
+          listCalls.push(fetchJson('/api/contents?' + new URLSearchParams({
+            com_ctgry_sn:code, lang_code_id:'ko', page_no:pageNo })));
+        });
+      });
+      FOOD_KEYWORDS.forEach(function(kw){
+        listCalls.push(fetchJson('/api/contents?' + new URLSearchParams({ keyword:kw, lang_code_id:'ko' })));
+      });
+
+      return Promise.all(listCalls);
+    }).then(function(results){
+      var cids = [], seen = {};
+      (results || []).forEach(function(r){
+        listCids(r).forEach(function(cid){
+          if(!seen[cid]){ seen[cid] = true; cids.push(cid); }
+        });
+      });
+      cids = cids.slice(0, POOL_MAX);
+      if(!cids.length){
+        state.pool.status = 'error';
+        state.pool.error = '비짓서울 API에서 음식 콘텐츠를 찾지 못했어요.';
+        render();
+        return;
+      }
+      state.pool.total = cids.length;
+      state.keepScroll = true; render();
+
+      /* 2단계 — 각 콘텐츠의 상세(좌표·식당 정보)를 동시 5개씩 가져온다 */
+      var idx = 0, active = 0, finished = 0;
+      function pump(){
+        while(active < 5 && idx < cids.length){
+          var nextCid = cids[idx];
+          idx++; active++;
+          (function(cid){
+            fetchJson('/api/contents/' + encodeURIComponent(cid)).then(function(d){
+              var info = d && d.ok && d.data && d.data.data;
+              var place = placeFromInfo(info);
+              if(place) PLACES.push(place);
+            }).catch(function(){}).then(function(){
+              active--; finished++;
+              state.pool.done = finished;
+              if(finished % 4 === 0 || finished === cids.length){ state.keepScroll = true; render(); }
+              if(finished === cids.length){
+                state.pool.status = PLACES.length ? 'ready' : 'error';
+                if(!PLACES.length) state.pool.error = '좌표가 있는 음식 콘텐츠를 찾지 못했어요.';
+                if(PLACES.length) writePoolCache(PLACES);
+                state.keepScroll = true; render();
+              } else {
+                pump();
+              }
+            });
+          })(nextCid);
+        }
+      }
+      pump();
+    }).catch(function(err){
+      state.pool.status = 'error';
+      state.pool.error = String((err && err.message) || err);
+      render();
+    });
+  }
 
   /* 위치 선택지 — 관광객 이동 거점 */
   var ORIGINS = [
@@ -579,16 +756,6 @@
     { key:'gangnam',    label:'강남역', lat:37.4979, lng:127.0276 }
   ];
 
-  /* 지도 배경 — 실제 좌표로 그려 어느 위치에서 봐도 방향이 맞음 */
-  var RIVER = [[37.583,126.83],[37.568,126.87],[37.552,126.90],[37.536,126.93],
-               [37.523,126.97],[37.517,127.01],[37.523,127.05],[37.532,127.09],[37.543,127.13]];
-  var LANDMARKS = [
-    { label:'경복궁', lat:37.5796, lng:126.9770 },
-    { label:'남산타워', lat:37.5512, lng:126.9883 },
-    { label:'서울역', lat:37.5547, lng:126.9707 },
-    { label:'DDP', lat:37.5665, lng:127.0095 },
-    { label:'광화문', lat:37.5720, lng:126.9769 }
-  ];
 
   var KM_PER_LAT = 111.0, KM_PER_LNG = 88.3;   /* 위도 37.5° 기준 */
 
@@ -608,12 +775,11 @@
      ============================================================ */
 
   var WEIGHTS = [
-    { key:'nat',     label:'국적별 선호도', w:0.26, cls:'' },
-    { key:'spice',   label:'매운맛 적합도', w:0.20, cls:'' },
-    { key:'dist',    label:'현재 위치에서 거리', w:0.18, cls:'t' },
+    { key:'nat',     label:'국적별 선호도', w:0.28, cls:'' },
+    { key:'spice',   label:'매운맛 적합도', w:0.22, cls:'' },
+    { key:'dist',    label:'현재 위치에서 거리', w:0.20, cls:'t' },
     { key:'explore', label:'탐색 성향 적합도', w:0.16, cls:'t' },
-    { key:'vibe',    label:'분위기 적합도', w:0.12, cls:'t' },
-    { key:'buzz',    label:'실시간 화제성', w:0.08, cls:'g' }
+    { key:'vibe',    label:'분위기 적합도', w:0.14, cls:'t' }
   ];
 
   function hash(str){
@@ -623,81 +789,76 @@
   }
   function clamp(n, lo, hi){ return Math.max(lo, Math.min(hi, n)); }
 
-  function natScore(menu, natKey){
-    var s = menu.prefBase + (menu.top.indexOf(natKey) >= 0 ? 17 : 0);
-    s += (hash(menu.id + '|' + natKey) % 9) - 4;
+  function natScore(place, natKey){
+    var table = NAT_CUISINE[natKey] || NAT_CUISINE_DEFAULT;
+    var s = table[place.kind] || table['기타'] || 65;
+    s += (hash(place.cid + '|' + natKey) % 9) - 4;
     return clamp(Math.round(s), 34, 99);
   }
-  function spiceScore(menu, spice){
-    return clamp(Math.round(100 - Math.abs(menu.spice - spice) * 11), 0, 100);
+  function spiceScore(place, spice){
+    return clamp(Math.round(100 - Math.abs(place.spice - spice) * 11), 0, 100);
   }
-  function exploreScore(menu, explore){
-    if(explore === 'adventure') return { exotic:100, mid:72, familiar:44 }[menu.novelty];
-    if(explore === 'trend') return clamp(Math.round(38 + menu.buzz * 0.62), 0, 100);
-    return { familiar:100, mid:82, exotic:48 }[menu.novelty];
+  function exploreScore(place, explore){
+    if(explore === 'adventure') return { exotic:100, mid:72, familiar:44 }[place.novelty] || 70;
+    if(explore === 'trend') return { trendy:92, mixed:70, local:54 }[place.vibe] || 70;
+    return { familiar:100, mid:82, exotic:48 }[place.novelty] || 75;
   }
-  function vibeScore(menu, atm){
+  function vibeScore(place, atm){
     if(atm === 'either') return 86;
-    if(menu.vibe === 'mixed') return 78;
+    if(place.vibe === 'mixed') return 78;
     var wants = atm === 'quiet' ? 'local' : 'trendy';
-    return menu.vibe === wants ? 100 : 50;
+    return place.vibe === wants ? 100 : 50;
   }
-  function buzzScore(menu){ return menu.buzz; }
   function distScore(km){ return clamp(Math.round(100 * Math.exp(-km / 2.8)), 0, 100); }
 
-  function blockReason(menu, p){
+  function blockReason(place, p){
     var i, hit = [];
     if(!p.noAllergy){
       for(i=0;i<p.allergens.length;i++){
-        if(menu.allergens.indexOf(p.allergens[i]) >= 0) hit.push(ALLERGEN_LABEL[p.allergens[i]]);
+        if(place.allergens.indexOf(p.allergens[i]) >= 0) hit.push(ALLERGEN_LABEL[p.allergens[i]]);
       }
       for(i=0;i<p.customAllergens.length;i++){
         var t = p.customAllergens[i];
-        if(menu.name.indexOf(t) >= 0 || menu.blurb.indexOf(t) >= 0 || menu.cat.indexOf(t) >= 0) hit.push(t);
+        if(place.name.indexOf(t) >= 0 || place.blurb.indexOf(t) >= 0 ||
+           place.cat.indexOf(t) >= 0 || (place.tip || '').indexOf(t) >= 0) hit.push(t);
       }
     }
-    if(hit.length) return '알레르기 · ' + hit.join(', ');
-    if(!p.veganNone && p.vegan.length){
-      for(i=0;i<p.vegan.length;i++){
-        if(menu.veganOk.indexOf(p.vegan[i]) < 0) return '채식 조건 · ' + VEGAN_LABEL[p.vegan[i]];
-      }
-    }
-    if(p.halal && !menu.halal) return '할랄 미인증';
+    if(hit.length) return '알레르기 추정 · ' + hit.join(', ');
+    if(!p.veganNone && p.vegan.length && !place.veganOk.length) return '채식 정보 없음';
+    if(p.halal && !place.halal) return '할랄 정보 없음';
     return null;
   }
 
-  function scoreMenu(menu, p){
+  function scoreMenu(place, p){
     var o = state.origin;
-    var km = distKm(o.lat, o.lng, menu.lat, menu.lng);
+    var km = distKm(o.lat, o.lng, place.lat, place.lng);
     var parts = {
-      nat: natScore(menu, p.natKey),
-      spice: spiceScore(menu, p.spice),
+      nat: natScore(place, p.natKey),
+      spice: spiceScore(place, p.spice),
       dist: distScore(km),
-      explore: exploreScore(menu, p.explore),
-      vibe: vibeScore(menu, p.atmosphere),
-      buzz: buzzScore(menu)
+      explore: exploreScore(place, p.explore),
+      vibe: vibeScore(place, p.atmosphere)
     };
     var total = 0, i;
     for(i=0;i<WEIGHTS.length;i++) total += parts[WEIGHTS[i].key] * WEIGHTS[i].w;
-    return { menu:menu, parts:parts, km:km, total:Math.round(total) };
+    return { menu:place, parts:parts, km:km, total:Math.round(total) };
   }
 
-  function reasonFor(key, menu, p, parts, km){
+  function reasonFor(key, place, p, parts, km){
     if(key === 'dist') return '현재 위치에서 ' + fmtDist(km) + ' · 걸어서 ' + walkMin(km) + '분이에요';
-    if(key === 'nat') return natLabel(p) + ' 여행자 선호도 ' + parts.nat + '점 — 상위권 메뉴예요';
+    if(key === 'nat') return natLabel(p) + ' 여행자의 ' + place.kind + ' 선호도 ' + parts.nat + '점이에요';
     if(key === 'spice'){
-      var d = Math.abs(menu.spice - p.spice);
-      if(d === 0) return '매운맛 ' + menu.spice + '/10 — 설정한 수준과 정확히 일치해요';
-      if(d <= 2) return '매운맛 ' + menu.spice + '/10 — 감당 가능한 범위예요';
-      return '매운맛 ' + menu.spice + '/10';
+      var d = Math.abs(place.spice - p.spice);
+      if(d === 0) return '매운맛 ' + place.spice + '/10(추정) — 설정한 수준과 일치해요';
+      if(d <= 2) return '매운맛 ' + place.spice + '/10(추정) — 감당 가능한 범위예요';
+      return '매운맛 ' + place.spice + '/10(추정)';
     }
     if(key === 'explore'){
-      if(p.explore === 'adventure') return NOVELTY_LABEL[menu.novelty] + ' — 도전을 즐기는 성향과 맞아요';
-      if(p.explore === 'trend') return menu.buzzNote;
-      return '실패 확률이 낮은 스테디셀러예요';
+      if(p.explore === 'adventure') return NOVELTY_LABEL[place.novelty] + ' — 도전을 즐기는 성향과 맞아요';
+      if(p.explore === 'trend') return (VIBE_LABEL[place.vibe] || '중간') + ' 분위기로 분류됐어요';
+      return '무난하게 고르기 좋은 유형이에요';
     }
-    if(key === 'vibe') return VIBE_LABEL[menu.vibe] + ' 분위기 — 선호와 맞아요';
-    return menu.buzzNote;
+    return (VIBE_LABEL[place.vibe] || '중간') + ' 분위기 — 선호와 맞아요';
   }
 
   function topReasons(entry, p, n){
@@ -709,277 +870,155 @@
     });
   }
 
-  function keywordFor(m){ return m.cat.split('·')[0].trim(); }
-
   function recommend(p){
-    ensureAllKeywordChecks();
-    var ok = [], blocked = [], far = [], pending = 0;
-    MENUS.forEach(function(m){
+    var ok = [], blocked = [], far = [];
+    PLACES.forEach(function(m){
       var b = blockReason(m, p);
       if(b){ blocked.push({ menu:m, why:b }); return; }
-      var kc = state.keywordCache[keywordFor(m)];
-      if(!kc || kc.loading){ pending++; return; }
-      if(!kc.ok){ blocked.push({ menu:m, why:'비짓서울 API에 등록된 실제 매장을 찾지 못함' }); return; }
       var e = scoreMenu(m, p);
       if(e.km > state.radiusKm) far.push(e); else ok.push(e);
     });
     var bySort = function(a, b){ return b.total - a.total || a.km - b.km; };
     ok.sort(bySort);
     far.sort(function(a, b){ return a.km - b.km; });
-    return { list:ok, blocked:blocked, far:far, pending:pending };
+    return { list:ok, blocked:blocked, far:far, pending:0 };
   }
 
   /* ============================================================
-     지도 — 실제 위경도를 평면 투영해 그림
+     지도 — Leaflet + OpenStreetMap (API 키·도메인 등록이 필요 없음)
      ============================================================ */
 
-  function mapSVG(entries, radiusKm, selId, opts){
-    opts = opts || {};
-    var W = 320, H = opts.h || 248;
-    var cx = W / 2, cy = H / 2;
-    var rPx = Math.min(cx, cy) - 28;
-    var scale = rPx / radiusKm;                 /* px per km */
-    var o = state.origin;
+  var mapHost = null, mapObj = null, mapLayer = null;
 
-    function px(lat, lng){
-      return [ cx + (lng - o.lng) * KM_PER_LNG * scale,
-               cy - (lat - o.lat) * KM_PER_LAT * scale ];
+  function leafletReady(){ return !!(window.L && L.map); }
+
+  function getMapHost(){
+    if(!mapHost){
+      mapHost = document.createElement('div');
+      mapHost.style.width = '100%';
+      mapHost.style.height = '100%';
     }
-
-    var river = RIVER.map(function(pt, i){
-      var q = px(pt[0], pt[1]);
-      return (i ? 'L' : 'M') + q[0].toFixed(1) + ' ' + q[1].toFixed(1);
-    }).join(' ');
-    var riverW = Math.max(5, 0.85 * scale);
-
-    var rings = '';
-    [0.34, 0.67, 1].forEach(function(f){
-      rings += '<circle cx="' + cx + '" cy="' + cy + '" r="' + (rPx * f).toFixed(1) + '" fill="none" ' +
-               'stroke="var(--line)" stroke-width="1" stroke-dasharray="' + (f === 1 ? '0' : '3 5') + '" opacity="' + (f === 1 ? '.9' : '.6') + '"/>';
-    });
-    if(!opts.hideLabel){
-      rings += '<text x="' + cx + '" y="' + (cy - rPx - 6) + '" text-anchor="middle" font-size="9" ' +
-               'fill="var(--ink-3)" font-family="monospace">반경 ' + fmtRadius(radiusKm) + '</text>';
-    }
-
-    var marks = '';
-    LANDMARKS.forEach(function(l){
-      var q = px(l.lat, l.lng);
-      if(q[0] < 10 || q[0] > W - 10 || q[1] < 14 || q[1] > H - 8) return;
-      marks += '<circle cx="' + q[0].toFixed(1) + '" cy="' + q[1].toFixed(1) + '" r="2.4" fill="var(--ink-3)" opacity=".5"/>' +
-               '<text x="' + (q[0] + 5).toFixed(1) + '" y="' + (q[1] + 3.4).toFixed(1) + '" font-size="8.5" fill="var(--ink-3)" opacity=".85">' + esc(l.label) + '</text>';
-    });
-
-    var pins = '';
-    entries.slice(0, 10).forEach(function(e, i){
-      var q = px(e.menu.lat, e.menu.lng);
-      var sel = e.menu.id === selId;
-      var hot = i < 3;
-      var col = sel ? 'var(--panel)' : (hot ? 'var(--accent)' : 'var(--teal)');
-      var lab = hot && !sel ? 'var(--on-accent)' : '#FFFFFF';
-      var r = sel ? 14 : 11.5;
-      pins += '<g data-action="pin" data-key="' + e.menu.id + '" style="cursor:pointer">' +
-        (sel ? '<circle cx="' + q[0].toFixed(1) + '" cy="' + q[1].toFixed(1) + '" r="20" fill="' + col + '" opacity=".14"/>' : '') +
-        '<path d="M' + q[0].toFixed(1) + ' ' + (q[1] + r * 1.5).toFixed(1) +
-          ' L' + (q[0] - r * 0.62).toFixed(1) + ' ' + (q[1] + r * 0.52).toFixed(1) +
-          ' L' + (q[0] + r * 0.62).toFixed(1) + ' ' + (q[1] + r * 0.52).toFixed(1) + ' Z" fill="' + col + '"/>' +
-        '<circle cx="' + q[0].toFixed(1) + '" cy="' + q[1].toFixed(1) + '" r="' + r + '" fill="' + col + '" stroke="var(--card)" stroke-width="2"/>' +
-        '<text x="' + q[0].toFixed(1) + '" y="' + (q[1] + 3.6).toFixed(1) + '" text-anchor="middle" font-size="' + (sel ? 11 : 10) +
-          '" font-weight="700" fill="' + lab + '" font-family="monospace">' + (i + 1) + '</text></g>';
-    });
-
-    var me = '<circle cx="' + cx + '" cy="' + cy + '" r="13" fill="var(--accent)" opacity=".28"/>' +
-             '<circle cx="' + cx + '" cy="' + cy + '" r="6" fill="var(--accent)" stroke="var(--panel)" stroke-width="2.4"/>';
-
-    return '<svg class="mapsvg" viewBox="0 0 ' + W + ' ' + H + '" width="100%" height="' + H + '" role="img" aria-label="주변 추천 지도">' +
-      '<rect width="' + W + '" height="' + H + '" fill="var(--line-soft)"/>' +
-      '<path d="' + river + '" fill="none" stroke="var(--sky)" stroke-width="' + riverW.toFixed(1) + '" opacity=".3" stroke-linecap="round" stroke-linejoin="round"/>' +
-      rings + marks + me + pins + '</svg>';
+    return mapHost;
   }
 
-  /* ============================================================
-     카카오맵 — 실제 지도(위 mapSVG는 카카오맵 로드 실패 시를 대비해 남겨둠)
-     ============================================================ */
-
-  var kakaoReady = false;
-  var kakaoWaiters = [];
-  function whenKakaoReady(cb){
-    if(kakaoReady){ cb(); return; }
-    kakaoWaiters.push(cb);
-    if(window.kakao && kakao.maps && kakao.maps.load && !whenKakaoReady._loading){
-      whenKakaoReady._loading = true;
-      kakao.maps.load(function(){
-        kakaoReady = true;
-        var ws = kakaoWaiters; kakaoWaiters = [];
-        ws.forEach(function(fn){ try{ fn(); }catch(e){} });
-      });
+  function ensureMap(container){
+    var host = getMapHost();
+    if(host.parentNode !== container){
+      container.innerHTML = '';
+      container.appendChild(host);
     }
+    if(!mapObj){
+      mapObj = L.map(host, { zoomControl:true, scrollWheelZoom:false });
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom:19, attribution:'&copy; OpenStreetMap'
+      }).addTo(mapObj);
+      mapLayer = L.layerGroup().addTo(mapObj);
+    }
+    mapLayer.clearLayers();
+    setTimeout(function(){ if(mapObj) mapObj.invalidateSize(); }, 0);
+    return mapObj;
   }
-  function radiusToLevel(km){
-    if(km <= 0.5) return 4;
-    if(km <= 1) return 5;
-    if(km <= 2) return 6;
-    return 7;
+
+  function pinIcon(label, color, wide){
+    return L.divIcon({
+      className:'',
+      html:'<div style="transform:translate(-50%,-100%);display:flex;flex-direction:column;align-items:center">' +
+        '<div style="background:' + color + ';color:#fff;font:700 11px/1.2 -apple-system,BlinkMacSystemFont,sans-serif;' +
+        'padding:5px 8px;border-radius:13px;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.3);white-space:nowrap;' +
+        (wide ? 'max-width:150px;overflow:hidden;text-overflow:ellipsis;' : '') + '">' + label + '</div>' +
+        '<div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid ' + color + '"></div></div>',
+      iconSize:[0,0], iconAnchor:[0,0]
+    });
+  }
+  function meMarker(lat, lng){
+    return L.marker([lat, lng], { icon: L.divIcon({ className:'',
+      html:'<div style="transform:translate(-50%,-50%);width:14px;height:14px;border-radius:50%;background:#FFA300;' +
+           'border:3px solid #26225B;box-shadow:0 0 0 4px rgba(255,163,0,.28)"></div>',
+      iconSize:[0,0], iconAnchor:[0,0] }) });
   }
 
   function drawPlacesMap(){
     var el = document.getElementById('kmap-places');
-    if(!el || !window.kakao || !kakao.maps) return;
+    if(!el || !leafletReady()) return;
+    var map = ensureMap(el);
     var p = activePersonaProfile();
     var rec = recommend(p);
-    var center = new kakao.maps.LatLng(state.origin.lat, state.origin.lng);
-    var map = new kakao.maps.Map(el, { center:center, level:radiusToLevel(state.radiusKm) });
-    new kakao.maps.Circle({
-      map:map, center:center, radius:state.radiusKm * 1000,
-      strokeWeight:1, strokeColor:'#26225B', strokeOpacity:.45, strokeStyle:'shortdash',
-      fillColor:'#26225B', fillOpacity:.05
-    });
-    var meOverlay = new kakao.maps.CustomOverlay({
-      position:center, yAnchor:.5,
-      content:'<div style="width:14px;height:14px;border-radius:50%;background:#FFA300;border:3px solid #26225B;box-shadow:0 0 0 4px rgba(255,163,0,.28)"></div>'
-    });
-    meOverlay.setMap(map);
+    var o = state.origin;
+    meMarker(o.lat, o.lng).addTo(mapLayer);
+    L.circle([o.lat, o.lng], { radius:state.radiusKm * 1000, color:'#26225B', weight:1,
+      opacity:.45, dashArray:'4 5', fillColor:'#26225B', fillOpacity:.05 }).addTo(mapLayer);
+    var pts = [[o.lat, o.lng]];
     rec.list.slice(0, 10).forEach(function(e, i){
       var m = e.menu;
-      var pos = new kakao.maps.LatLng(m.lat, m.lng);
       var sel = m.id === state.selectedId;
       var col = sel ? '#26225B' : (i < 3 ? '#C8102E' : '#54585A');
-      var overlay = new kakao.maps.CustomOverlay({
-        position:pos, yAnchor:1, zIndex: sel ? 10 : 1,
-        content:'<div data-mapmenu="' + m.id + '" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;transform:translateY(2px)">' +
-          '<div style="background:' + col + ';color:#fff;font:700 11px/1 monospace;padding:5px 7px;border-radius:14px;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.25);white-space:nowrap">' + (i + 1) + '</div>' +
-          '<div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid ' + col + ';margin-top:-1px"></div></div>'
-      });
-      overlay.setMap(map);
+      var mk = L.marker([m.lat, m.lng], { icon: pinIcon(String(i + 1), col) }).addTo(mapLayer);
+      mk.on('click', (function(id){ return function(){ state.activeMenu = id; state.screen = 'menu'; render(); }; })(m.id));
+      pts.push([m.lat, m.lng]);
     });
-    kakao.maps.event.addListener(map, 'click', function(){}); /* no-op: keeps overlays interactive on some browsers */
-    setTimeout(function(){
-      el.querySelectorAll('[data-mapmenu]').forEach(function(node){
-        node.addEventListener('click', function(){
-          var mid = node.getAttribute('data-mapmenu');
-          state.activeMenu = mid;
-          state.screen = 'menu'; render();
-        });
-      });
-    }, 0);
+    if(pts.length > 1) map.fitBounds(pts, { padding:[30, 30], maxZoom:16 });
+    else map.setView([o.lat, o.lng], 15);
   }
 
   function drawMenuMap(){
-    var m = MENUS.filter(function(x){ return x.id === state.activeMenu; })[0];
+    var m = PLACES.filter(function(x){ return x.id === state.activeMenu; })[0];
     var el = document.getElementById('kmap-menu');
-    if(!m || !el || !window.kakao || !kakao.maps) return;
-    var origin = new kakao.maps.LatLng(state.origin.lat, state.origin.lng);
-    var menuPos = new kakao.maps.LatLng(m.lat, m.lng);
-    var bounds = new kakao.maps.LatLngBounds();
-    bounds.extend(origin); bounds.extend(menuPos);
-    var map = new kakao.maps.Map(el, { center:origin, level:6 });
-    new kakao.maps.CustomOverlay({
-      position:origin, yAnchor:.5, map:map,
-      content:'<div style="width:13px;height:13px;border-radius:50%;background:#FFA300;border:3px solid #26225B"></div>'
-    });
-    new kakao.maps.CustomOverlay({
-      position:menuPos, yAnchor:1, map:map,
-      content:'<div style="background:#54585A;color:#fff;font:700 10px/1 monospace;padding:4px 7px;border-radius:12px;border:2px solid #fff;white-space:nowrap">샘플 위치</div>'
-    });
-    var real = state.keywordCache[keywordFor(m)];
-    if(real && real.ok && real.lat && real.lng){
-      var rp = new kakao.maps.LatLng(real.lat, real.lng);
-      bounds.extend(rp);
-      new kakao.maps.CustomOverlay({
-        position:rp, yAnchor:1, map:map,
-        content:'<div style="background:#C8102E;color:#fff;font:700 10.5px/1.2 -apple-system,sans-serif;padding:5px 8px;border-radius:12px;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.3);white-space:nowrap">🍽 ' + esc(real.name) + '</div>'
-      });
-    }
-    map.setBounds(bounds, 40, 40, 40, 40);
+    if(!m || !el || !leafletReady()) return;
+    var map = ensureMap(el);
+    var o = state.origin;
+    meMarker(o.lat, o.lng).addTo(mapLayer);
+    L.marker([m.lat, m.lng], { icon: pinIcon('🍽 ' + esc(m.name), '#C8102E', true) }).addTo(mapLayer);
+    map.fitBounds([[o.lat, o.lng], [m.lat, m.lng]], { padding:[36, 36], maxZoom:16 });
   }
 
-  function ensureKakaoOrFallback(el, tries){
-    tries = tries || 0;
-    if(window.kakao && kakao.maps) return;
+  function mapFallback(el){
     if(!document.body.contains(el)) return;
-    if(tries > 6){
-      el.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--ink-3);font-size:12px;text-align:center;padding:0 16px">지도를 불러오지 못했어요.<br>잠시 후 다시 열어보세요.</div>';
-      return;
-    }
-    setTimeout(function(){ ensureKakaoOrFallback(el, tries + 1); }, 700);
+    el.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;' +
+      'color:var(--ink-3);font-size:12px;text-align:center;padding:0 16px;line-height:1.5">' +
+      '지도를 불러오지 못했어요.<br>잠시 후 다시 열어보세요.</div>';
   }
-
+  function waitForLeaflet(el, tries){
+    if(leafletReady()){ renderMaps(); return; }
+    if(tries > 14){ mapFallback(el); return; }
+    setTimeout(function(){ waitForLeaflet(el, tries + 1); }, 400);
+  }
   function renderMaps(){
-    var pEl = document.getElementById('kmap-places');
-    var mEl = document.getElementById('kmap-menu');
-    if(pEl){
-      whenKakaoReady(function(){ if(state.screen === 'places' && document.getElementById('kmap-places')) drawPlacesMap(); });
-      ensureKakaoOrFallback(pEl);
-    }
-    if(mEl){
-      whenKakaoReady(function(){ if(state.screen === 'menu' && document.getElementById('kmap-menu')) drawMenuMap(); });
-      ensureKakaoOrFallback(mEl);
-    }
+    var el = document.getElementById('kmap-places') || document.getElementById('kmap-menu');
+    if(!el) return;
+    if(!leafletReady()){ waitForLeaflet(el, 0); return; }
+    if(state.screen === 'places') drawPlacesMap();
+    else if(state.screen === 'menu') drawMenuMap();
   }
 
-  /* 비짓서울 API에서 이 카테고리(키워드)에 해당하는 실제 등록 매장을 찾습니다.
-     같은 키워드를 쓰는 메뉴끼리는 결과를 공유해서 중복 호출을 줄입니다.
-     이 결과는 (1) 상세 화면 지도에 실제 위치를 표시하는 데, (2) 추천 목록에서
-     실제로 등록된 곳을 찾지 못한 메뉴를 걸러내는 데 함께 쓰입니다. */
-  function fetchRealPlaceForKeyword(keyword){
-    if(state.keywordCache[keyword]) return;
-    state.keywordCache[keyword] = { loading:true };
-
-    function refresh(){
-      if(state.screen === 'menu' || state.screen === 'places' || state.screen === 'result'){
-        state.keepScroll = true; render();
-      }
+  /* 이 장소의 비짓서울 원본 데이터 — 화면에 보이는 값이 어디서 왔는지 그대로 보여줍니다 */
+  function rawDataSectionHtml(m){
+    function row(k, v){
+      if(!v) return '';
+      return '<div class="kv"><span class="k">' + esc(k) + '</span><span class="v">' + esc(String(v)) + '</span></div>';
     }
-    function tryCids(cids, i){
-      if(i >= cids.length){ state.keywordCache[keyword] = { ok:false }; refresh(); return; }
-      fetch('/api/contents/' + encodeURIComponent(cids[i]))
-        .then(function(r){ return r.json(); })
-        .then(function(d){
-          var info = d.ok && d.data && d.data.data;
-          var tr = info && info.traffic;
-          var lat = tr && parseFloat(tr.map_position_y);
-          var lng = tr && parseFloat(tr.map_position_x);
-          if(info && lat && lng && !isNaN(lat) && !isNaN(lng)){
-            var isRestaurant = !!(info.restaurant && info.restaurant.type &&
-              info.restaurant.type.some(function(t){ return t.code_nm === '음식점'; }));
-            state.keywordCache[keyword] = {
-              ok:true, name:info.post_sj, addr:(tr.new_adres || tr.adres || ''),
-              lat:lat, lng:lng, isRestaurant:isRestaurant
-            };
-            refresh();
-          } else {
-            tryCids(cids, i + 1);
-          }
-        })
-        .catch(function(){ tryCids(cids, i + 1); });
-    }
+    var rows = '';
+    rows += row('콘텐츠 ID (cid)', m.cid);
+    rows += row('분류', m.cat);
+    rows += row('주소', m.addr);
+    rows += row('가까운 역', m.subway);
+    rows += row('전화', m.tel);
+    rows += row('영업시간', (m.hours || '').split(/[\r\n]/)[0]);
+    rows += row('휴무', m.closed);
+    rows += row('대표 메뉴', m.tip);
+    if(m.halalLabels && m.halalLabels.length) rows += row('할랄 표기', m.halalLabels.join(', '));
+    if(m.dietaryLabels && m.dietaryLabels.length) rows += row('채식 표기', m.dietaryLabels.join(', '));
+    if(m.tags && m.tags.length) rows += row('태그', m.tags.join(', '));
 
-    fetch('/api/contents?' + new URLSearchParams({ keyword:keyword, lang_code_id:'ko' }))
-      .then(function(r){ return r.json(); })
-      .then(function(data){
-        var items = (data.ok && data.data && data.data.data) || [];
-        var cids = items.slice(0, 6).map(function(it){ return it.cid; }).filter(Boolean);
-        tryCids(cids, 0);
-      })
-      .catch(function(){ state.keywordCache[keyword] = { ok:false }; refresh(); });
-  }
+    var live = state.rawCache[m.cid];
+    var note = '';
+    if(live && live.loading) note = '<p class="muted" style="margin-top:8px">비짓서울 API를 호출하는 중…</p>';
+    else if(live && live.ok) note = '<p class="fine" style="margin-top:8px">✅ ' + esc(live.at) + '에 다시 불러왔어요 — ' + esc(live.name) + '</p>';
+    else if(live) note = '<p class="muted" style="margin-top:8px">⚠️ ' + esc(live.message || '호출에 실패했어요') + '</p>';
 
-  function ensureAllKeywordChecks(){
-    var seen = {};
-    MENUS.forEach(function(m){
-      var kw = keywordFor(m);
-      if(seen[kw]) return;
-      seen[kw] = true;
-      fetchRealPlaceForKeyword(kw);
-    });
-  }
-
-  function realPlaceNoteHtml(m){
-    var c = state.keywordCache[keywordFor(m)];
-    if(!c || c.loading) return '<p class="fine" style="margin-top:8px">🔎 비짓서울 API에서 이 카테고리의 실제 등록 매장을 찾는 중…</p>';
-    if(!c.ok) return '<p class="fine" style="margin-top:8px">이 카테고리로 실제 등록된 매장을 찾지 못했어요. (API 키 승인 전이거나 등록된 콘텐츠가 없을 수 있어요)</p>';
-    return '<p class="fine" style="margin-top:8px">🍽 지도의 빨간 표시는 비짓서울 API에 실제 등록된 ' + (c.isRestaurant ? '식당' : '장소') +
-      ' <b>' + esc(c.name) + '</b>' + (c.addr ? ' · ' + esc(c.addr) : '') + '입니다.</p>';
+    return rows +
+      '<button class="cta ghost" style="margin-top:10px" data-action="reload-raw" data-key="' + esc(m.cid) + '">🔄 지금 비짓서울 API에서 다시 불러오기</button>' +
+      note +
+      '<p class="fine" style="margin-top:8px">이 화면의 이름·주소·좌표·영업정보는 모두 비짓서울 API 콘텐츠 상세(contents/info) 응답에서 그대로 가져온 값입니다.</p>';
   }
 
   /* ============================================================
@@ -1154,8 +1193,8 @@
     showLoc: false,
     showOff: false,
     geoMsg: '',
-    liveCache: {},
-    keywordCache: {},
+    rawCache: {},
+    pool: { status:'idle', done:0, total:0, error:'', fromCache:false },
     profile: {
       natKey: null, natCustom: '',
       explore: null, atmosphere: null, spice: null,
@@ -1458,8 +1497,8 @@
 
   function placeCard(e, p, rank){
     var m = e.menu;
-    var tags = '<span class="tag">🌶️ ' + m.spice + '/10</span><span class="tag">' + esc(VIBE_LABEL[m.vibe]) + '</span>';
-    if(m.buzz >= 70) tags += '<span class="tag hot">화제</span>';
+    var tags = '<span class="tag">🌶️ ' + m.spice + '/10 추정</span>' +
+      '<span class="tag">' + esc(VIBE_LABEL[m.vibe] || '중간') + '</span>';
     if(m.veganOk.length) tags += '<span class="tag veg">채식 가능</span>';
     if(m.halal) tags += '<span class="tag halal">할랄</span>';
     var why = topReasons(e, p, 2);
@@ -1498,8 +1537,12 @@
     var body;
     if(rec.list.length){
       body = rec.list.map(function(e, i){ return placeCard(e, p, i + 1); }).join('');
-    } else if(rec.pending){
-      body = '<div class="empty-state">🔎 비짓서울 API에 실제로 등록된 곳인지 확인하고 있어요…</div>';
+    } else if(state.pool.status === 'loading'){
+      body = '<div class="empty-state">🔎 비짓서울 API에서 실제 음식 콘텐츠를 불러오는 중이에요…' +
+        (state.pool.total ? '<br>' + state.pool.done + ' / ' + state.pool.total : '') + '</div>';
+    } else if(state.pool.status === 'error'){
+      body = '<div class="empty-state"><b>비짓서울 API에서 데이터를 불러오지 못했어요.</b><br>' +
+        esc(state.pool.error || '') + '<br><button class="cta ghost" style="margin-top:12px" data-action="reload-pool">다시 시도하기</button></div>';
     } else {
       var nearest = rec.far[0];
       body = '<div class="empty-state"><b>반경 ' + fmtRadius(state.radiusKm) + ' 안에는 조건에 맞는 곳이 없어요.</b>' +
@@ -1536,18 +1579,19 @@
           '<span class="cnt num">' + rec.list.length + '곳</span></div>' +
         '<div class="pad" style="padding-top:14px">' +
           '<h2 class="display" style="font-size:20px;margin:0 0 4px">' + esc(per.title) + '에게 가까운 순서</h2>' +
-          '<p class="muted" style="margin:0 0 13px">매치도 = 국적 선호 26% · 매운맛 20% · <b>거리 18%</b> · 탐색 성향 16% · 분위기 12% · 화제성 8%</p>' +
-          (rec.pending ? '<p class="fine" style="margin:0 0 10px">🔎 비짓서울 API에 실제로 등록된 곳인지 확인 중인 메뉴 ' + rec.pending + '개는 잠시 후 추가돼요.</p>' : '') +
+          '<p class="muted" style="margin:0 0 13px">매치도 = 국적 선호 28% · 매운맛 22% · <b>거리 20%</b> · 탐색 성향 16% · 분위기 14%</p>' +
+          (state.pool.status === 'loading' && rec.list.length
+            ? '<p class="fine" style="margin:0 0 10px">🔎 비짓서울 API에서 불러오는 중 — ' + state.pool.done + ' / ' + state.pool.total + '곳</p>' : '') +
           notes +
           '<div style="margin-top:12px">' + body + '</div>' +
-          '<p class="fine" style="margin-top:16px">지도는 카카오맵 실제 지도입니다. 목록은 비짓서울 API에 실제로 등록된 콘텐츠가 확인된 메뉴만 보여주며, 위치는 그 카테고리를 본뜬 샘플 좌표입니다. 거리·도보 시간은 직선거리 기준 추정값입니다.</p>' +
+          '<p class="fine" style="margin-top:16px">목록에 뜨는 곳은 모두 비짓서울 API에 실제로 등록된 콘텐츠이고, 지도의 위치는 API가 준 실제 좌표입니다(OpenStreetMap). 거리·도보 시간은 직선거리 기준 추정값이며, 매운맛·알레르기는 이름·대표 메뉴에서 추정한 값입니다.</p>' +
         '</div>' +
       '</div>' + tabs('places') + '</div>';
   }
 
   function screenMenu(){
     var p = activePersonaProfile();
-    var m = MENUS.filter(function(x){ return x.id === state.activeMenu; })[0];
+    var m = PLACES.filter(function(x){ return x.id === state.activeMenu; })[0];
     if(!m) return screenPlaces();
     var e = scoreMenu(m, p);
 
@@ -1557,8 +1601,10 @@
         '<div class="track"><div class="fill ' + w.cls + '" style="width:' + e.parts[w.key] + '%"></div></div></div>';
     }).join('');
 
-    var alg = m.allergens.map(function(a){ return ALLERGEN_LABEL[a] || a; }).join(', ') || '표시 성분 없음';
-    var vegLine = m.veganOk.length ? m.veganOk.map(function(v){ return VEGAN_LABEL[v].split(' ')[0]; }).join(', ') + ' 가능' : '채식 불가';
+    var alg = m.allergens.map(function(a){ return ALLERGEN_LABEL[a] || a; }).join(', ') || '추정된 성분 없음';
+    var vegLine = m.veganOk.length
+      ? (m.dietaryLabels && m.dietaryLabels.length ? m.dietaryLabels.join(', ') : '채식 관련 표기 있음')
+      : '채식 정보 없음';
 
     var others = recommend(p).list.filter(function(x){ return x.menu.id !== m.id; }).slice(0, 2).map(function(x){
       return '<button class="place" data-action="menu" data-key="' + x.menu.id + '">' +
@@ -1580,7 +1626,7 @@
         '<div class="mapwrap mini"><div id="kmap-menu" style="width:100%;height:180px"></div></div>' +
         '<div class="kv" style="margin-top:4px"><span class="k">' + esc(state.origin.label) + '에서</span>' +
         '<span class="v num">' + fmtDist(e.km) + ' · 도보 ' + walkMin(e.km) + '분</span></div>' +
-        realPlaceNoteHtml(m) + '</div>' +
+        '<p class="fine" style="margin-top:8px">📍 비짓서울 API가 제공한 실제 좌표(' + m.lat.toFixed(5) + ', ' + m.lng.toFixed(5) + ')로 표시했습니다.</p></div>' +
       '<div class="sect"><h3 class="sect-title">이 점수가 나온 이유</h3><div class="bars">' + bars + '</div></div>' +
       '<div class="sect"><h3 class="sect-title">내 조건과 대조</h3>' +
         '<div class="kv"><span class="k">거리</span><span class="v num">' + fmtDist(e.km) + ' (반경 ' + fmtRadius(state.radiusKm) + ' 기준)</span></div>' +
@@ -1588,40 +1634,13 @@
         '<div class="kv"><span class="k">매운 정도</span><span class="v num">' + m.spice + ' / 10 (내 기준 ' + p.spice + ')</span></div>' +
         '<div class="kv"><span class="k">알레르기 유발 성분</span><span class="v">' + esc(alg) + '</span></div>' +
         '<div class="kv"><span class="k">채식</span><span class="v ' + (m.veganOk.length ? 'ok' : '') + '">' + esc(vegLine) + '</span></div>' +
-        '<div class="kv"><span class="k">할랄</span><span class="v ' + (m.halal ? 'ok' : 'no') + '">' + (m.halal ? '인증 확인' : '미인증') + '</span></div>' +
-        '<div class="kv"><span class="k">SNS 화제성</span><span class="v">' + esc(m.buzzNote) + '</span></div>' +
+        '<div class="kv"><span class="k">할랄</span><span class="v ' + (m.halal ? 'ok' : 'no') + '">' + (m.halal ? '관련 표기 있음' : '정보 없음') + '</span></div>' +
       '</div>' +
-      '<div class="sect"><h3 class="sect-title">먹는 방법</h3><div class="tipbox">' + esc(m.tip) + '</div></div>' +
-      '<div class="sect"><h3 class="sect-title">비짓서울 API 실시간 확인</h3>' + liveSectionHtml(m) + '</div>' +
+      '<p class="fine" style="margin:0 16px">매운맛·알레르기 성분은 비짓서울 API에 없는 항목이라, 가게 이름·대표 메뉴·태그를 기준으로 <b>추정</b>한 값입니다. 할랄·채식은 API가 제공하는 표기를 그대로 씁니다.</p>' +
+      (m.tip ? '<div class="sect"><h3 class="sect-title">대표 메뉴</h3><div class="tipbox">' + esc(m.tip) + '</div></div>' : '') +
+      '<div class="sect"><h3 class="sect-title">비짓서울 원본 데이터</h3>' + rawDataSectionHtml(m) + '</div>' +
       '<div class="sect"><h3 class="sect-title">다음 한 입</h3>' + others + '</div>' +
       '</div>' + tabs('places') + '</div>';
-  }
-
-  /* 이 화면에서만 쓰는 비짓서울 실시간 연동 — 서버(/api/contents)를 통해
-     같은 카테고리의 실제 비짓서울 콘텐츠를 즉석에서 조회해 보여줍니다.
-     (매칭 엔진 자체는 위 MENUS 샘플 데이터를 기준으로 동작하고,
-      이 섹션만 실제 API 키로 라이브 호출을 검증하는 용도입니다) */
-  function liveSectionHtml(m){
-    var cache = state.liveCache[m.id];
-    if(!cache){
-      return '<button class="cta ghost" data-action="live-check" data-key="' + m.id + '">🔎 \'' + esc(m.cat.split('·')[0].trim()) + '\' 실시간 검색해보기</button>' +
-        '<p class="fine" style="margin-top:8px">비짓서울 API에 지금 이 카테고리로 실시간 검색을 요청해, 실제 등록된 콘텐츠를 가져옵니다.</p>';
-    }
-    if(cache.loading){
-      return '<p class="muted">비짓서울 API를 호출하는 중…</p>';
-    }
-    if(!cache.ok){
-      return '<p class="muted">⚠️ ' + esc(cache.message || '호출에 실패했어요') + '</p>' +
-        '<p class="fine" style="margin-top:6px">API 키 승인 전이거나 아직 등록되지 않았다면 정상적인 현상입니다.</p>';
-    }
-    var items = (cache.data && cache.data.data) || [];
-    if(!Array.isArray(items) || !items.length){
-      return '<p class="muted">이 카테고리로 검색된 실제 콘텐츠를 찾지 못했어요.</p>';
-    }
-    return '<div>' + items.slice(0, 5).map(function(it){
-      return '<div class="kv"><span class="k">' + esc(it.post_sj || it.cid || '이름 없음') + '</span><span class="v">' + esc(it.cid || '') + '</span></div>';
-    }).join('') + '</div>' +
-      '<p class="fine" style="margin-top:8px">비짓서울 API에서 실시간으로 받아온 결과입니다.</p>';
   }
 
   function screenGuide(){
@@ -1909,23 +1928,36 @@
       case 'clear-preview':
         state.previewCombo = null; render(); break;
 
-      case 'live-check':
-        var mm = MENUS.filter(function(x){ return x.id === key; })[0];
-        if(!mm) break;
-        state.liveCache[key] = { loading:true };
+      case 'reload-pool':
+        state.pool.status = 'idle';
+        loadRealPlaces(true);
         state.keepScroll = true; render();
-        fetch('/api/contents?' + new URLSearchParams({
-          keyword: mm.cat.split('·')[0].trim(),
-          lang_code_id: 'ko'
-        }))
+        break;
+
+      case 'reload-raw':
+        state.rawCache[key] = { loading:true };
+        state.keepScroll = true; render();
+        fetch('/api/contents/' + encodeURIComponent(key))
           .then(function(r){ return r.json(); })
-          .then(function(data){
-            state.liveCache[key] = data;
-            if(state.screen === 'menu' && state.activeMenu === key){ state.keepScroll = true; render(); }
+          .then(function(d){
+            var info = d && d.ok && d.data && d.data.data;
+            if(info){
+              var fresh = placeFromInfo(info);
+              if(fresh){
+                for(var i=0;i<PLACES.length;i++){ if(PLACES[i].cid === key) PLACES[i] = fresh; }
+                writePoolCache(PLACES);
+              }
+              var now = new Date();
+              state.rawCache[key] = { ok:true, name:info.post_sj || key,
+                at: now.getHours() + '시 ' + ('0' + now.getMinutes()).slice(-2) + '분' };
+            } else {
+              state.rawCache[key] = { ok:false, message:(d && d.message) || '응답에 데이터가 없어요' };
+            }
+            state.keepScroll = true; render();
           })
           .catch(function(err){
-            state.liveCache[key] = { ok:false, message:String(err && err.message || err) };
-            if(state.screen === 'menu' && state.activeMenu === key){ state.keepScroll = true; render(); }
+            state.rawCache[key] = { ok:false, message:String((err && err.message) || err) };
+            state.keepScroll = true; render();
           });
         break;
     }
@@ -1957,6 +1989,7 @@
     }
   });
 
+  loadRealPlaces();
   render();
 })();
 </script>

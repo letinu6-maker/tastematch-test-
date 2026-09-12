@@ -639,7 +639,10 @@
       var code = node.com_ctgry_sn;
       if(code && !seen[code]){
         var label = [node.cate_depth, node.ctgry_nm, node.ctgry_name, node.name].join(' ');
-        if(/음식|맛집|식당|카페/.test(label)){ seen[code] = true; out.push(code); }
+        /* 카테고리 목록은 영문으로 내려오는 경우가 있어 두 언어를 모두 확인 */
+        var isFood = /음식|맛집|식당|카페|주점|cuisine|restaurant|food|cafe|tea\s*shop|dining/i.test(label);
+        var isNightlife = /club|나이트|클럽/i.test(label);
+        if(isFood && !isNightlife){ seen[code] = true; out.push(code); }
       }
       Object.keys(node).forEach(function(k){ walk(node[k]); });
     }
@@ -684,7 +687,7 @@
       collectFoodCategoryCodes(catJson).forEach(function(c){
         if(codes.indexOf(c) < 0) codes.push(c);
       });
-      codes = codes.slice(0, 6);
+      codes = codes.slice(0, 8);
 
       var listCalls = [];
       codes.forEach(function(code){

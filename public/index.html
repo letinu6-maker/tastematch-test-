@@ -307,6 +307,13 @@
     color:var(--ink-3); padding:5px 11px; border-radius:999px; cursor:pointer; }
   .langbtn.on{ background:var(--card); color:var(--ink); box-shadow:0 1px 3px rgba(0,0,0,.12); }
   .langrow{ display:flex; justify-content:flex-end; padding:10px 16px 0; }
+  .map-wait{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:7px;
+    background:var(--gold-wash); line-height:1.5; text-align:center; padding:0 18px; z-index:1000; }
+  .map-wait b{ font-size:14px; color:var(--ink); }
+  .map-wait .sub{ font-size:12px; color:var(--ink-2); }
+  .spinner{ width:22px; height:22px; border-radius:50%; border:2.5px solid var(--line);
+    border-top-color:var(--ink-2); animation:spin .8s linear infinite; }
+  @keyframes spin{ to{ transform:rotate(360deg) } }
   .empty-state{ font-size:13px; line-height:1.7; color:var(--ink-2); background:var(--gold-wash); border-radius:13px; padding:14px 15px; margin-bottom:10px; }
 
   .filter-summary{ display:flex; flex-wrap:wrap; gap:6px; }
@@ -749,7 +756,8 @@
             state.pool.filling = true;
             maybeRender();
           }
-          if(serverTries < 40){ setTimeout(pollServer, 2500); return; }
+          /* 처음 몇 번은 짧게 물어봐서, 서버가 멈춰 있을 때 빨리 넘어간다 */
+          if(serverTries < 40){ setTimeout(pollServer, serverTries < 4 ? 1200 : 2500); return; }
           collectHere();
           return;
         }
@@ -1150,6 +1158,10 @@
   ];
 
   var I18N_EN = {
+    "내 주변 식당 찾으러 가기":"Find restaurants near me",
+    "주변 식당을 찾고 있어요":"Finding restaurants near you",
+    "반경을 넓히면 더 많은 곳이 보여요":"Widen the radius to see more places",
+    "비짓서울 API에 연결하는 중이에요":"Connecting to the VisitSeoul API",
     "추천 시작하기":"Start",
     "시작하기 · 7문항":"Start · 7 questions",
     "저장된 프로필로 계속하기":"Continue with saved profile",
@@ -1999,15 +2011,23 @@
           '<div class="cohort" style="margin-top:12px"><span class="big">' + pct + '%</span>' +
           '<p>' + esc(tpl('cohort', { nat:natLabel(p) })) + '</p></div>' +
         '</div>' +
-        '<div class="sect"><h3 class="sect-title">' + esc(t(state.origin.label)) + t(' 주변 상위 추천</h3>') + preview +
+        '<div class="sect"><h3 class="sect-title">' + esc(t(state.origin.label)) + t(' 주변 상위 추천</h3>') +
+          (top.length ? preview
+            : '<p class="fine" style="margin:0">' + esc(t(poolStillLoading() ? '주변 식당을 찾고 있어요' : '반경을 넓히면 더 많은 곳이 보여요')) + '</p>') +
           '<button class="cta" style="margin-top:12px" data-action="go" data-key="places">' +
-            esc(tpl('mapCount', { n:rec.list.length })) + '</button>' +
+            (rec.list.length ? esc(tpl('mapCount', { n:rec.list.length }))
+                             : esc(t('내 주변 식당 찾으러 가기'))) + '</button>' +
           t('<button class="cta ghost" style="margin-top:8px" data-action="go" data-key="guide">9가지 유형 둘러보기</button>') +
         '</div>' +
       '</div>' + tabs('result') + '</div>';
   }
 
   var RADII = [0.5, 1, 2, 5];
+
+  /* 아직 비짓서울 API에서 장소를 모으는 중인가 */
+  function poolStillLoading(){
+    return state.pool.status === 'loading' || state.pool.filling === true;
+  }
 
   function placeCard(e, p, rank){
     var m = e.menu;
@@ -2048,12 +2068,15 @@
              fmtRadius(r) + '</button>';
     }).join('');
 
+    /* 아직 한 곳도 못 찾았고 수집 중이면, 지도 자리에 대기 UI를 덮는다.
+       같은 문구를 본문에도 반복하지 않는다. */
+    var mapWaiting = !rec.list.length && poolStillLoading();
+
     var body;
     if(rec.list.length){
       body = rec.list.map(function(e, i){ return placeCard(e, p, i + 1); }).join('');
-    } else if(state.pool.status === 'loading'){
-      body = '<div class="empty-state">' + esc(tpl('poolLoading', {})) +
-        (state.pool.total ? '<br>' + state.pool.done + ' / ' + state.pool.total : '') + '</div>';
+    } else if(mapWaiting){
+      body = '';
     } else if(state.pool.status === 'error'){
       body = t('<div class="empty-state"><b>비짓서울 API에서 데이터를 불러오지 못했어요.</b><br>') +
         esc(state.pool.error || '') + t('<br><button class="cta ghost" style="margin-top:12px" data-action="reload-pool">다시 시도하기</button></div>');
@@ -2088,13 +2111,20 @@
           t('<span class="pinico">📍</span><span class="l"><span class="k">현재 위치') + (state.origin.live ? ' · GPS' : '') + '</span>' +
           '<span class="v">' + esc(t(state.origin.label)) + '</span></span>' +
           '<span class="chev">' + (state.showLoc ? t('닫기') : t('변경')) + '</span></button>' + locPanel() + '</div>' +
-        '<div class="mapwrap"><div id="kmap-places" style="width:100%;height:248px"></div></div>' +
+        '<div class="mapwrap"><div id="kmap-places" style="width:100%;height:248px"></div>' +
+          (mapWaiting
+            ? '<div class="map-wait"><span class="spinner" aria-hidden="true"></span>' +
+              '<b>' + esc(t('주변 식당을 찾고 있어요')) + '</b>' +
+              '<span class="sub">' + esc(state.pool.total
+                  ? tpl('loadProgress', { done:state.pool.done, total:state.pool.total })
+                  : t('비짓서울 API에 연결하는 중이에요')) + '</span></div>'
+            : '') + '</div>' +
         t('<div class="radrow"><span class="muted">반경</span>') + radChips +
-          '<span class="cnt num">' + rec.list.length + t('곳</span></div>') +
+          '<span class="cnt num">' + (mapWaiting ? '—' : rec.list.length + t('곳')) + '</span></div>' +
         '<div class="pad" style="padding-top:14px">' +
           '<h2 class="display" style="font-size:20px;margin:0 0 4px">' + esc(tpl('nearOrder', { persona:t(per.title) })) + '</h2>' +
           t('<p class="muted" style="margin:0 0 13px">매치도 = 국적 선호 28% · 매운맛 22% · <b>거리 20%</b> · 탐색 성향 16% · 분위기 14%</p>') +
-          ((state.pool.status === 'loading' || state.pool.filling)
+          ((!mapWaiting && poolStillLoading())
             ? '<p class="fine" style="margin:0 0 10px">' + esc(tpl('loadProgress', { done:state.pool.done, total:state.pool.total })) + '</p>' : '') +
           notes +
           '<div style="margin-top:12px">' + body + '</div>' +

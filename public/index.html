@@ -474,6 +474,7 @@
   var FOOD_CATEGORY_SEEDS = ['Cz9d1h6'];
   var FOOD_KEYWORDS = ['한식', '맛집', '식당', '한정식', '국수', '고기', '해산물', '카페'];
   var POOL_CACHE_KEY = 'tastematch.pool.v3';
+  var MAP_MAX_PINS = 80;  /* 지도에 찍는 최대 개수 */
   var POOL_FIRST = 60;    /* 이만큼 모이면 화면을 먼저 열어준다 */
   var POOL_MAX = 260;     /* 나머지는 온보딩 중 백그라운드로 계속 채운다 */
 
@@ -976,13 +977,26 @@
     meMarker(o.lat, o.lng).addTo(mapLayer);
     L.circle([o.lat, o.lng], { radius:state.radiusKm * 1000, color:'#26225B', weight:1,
       opacity:.45, dashArray:'4 5', fillColor:'#26225B', fillOpacity:.05 }).addTo(mapLayer);
+    /* 반경 안의 모든 곳을 지도에 표시한다.
+       상위 10곳은 순위 핀으로, 나머지는 작은 점으로 찍어 랭킹은 유지하면서
+       "이 동네에 이만큼 있다"는 밀도가 보이게 한다. */
     var pts = [[o.lat, o.lng]];
-    rec.list.slice(0, 10).forEach(function(e, i){
+    var open = function(id){ return function(){ state.activeMenu = id; state.screen = 'menu'; render(); }; };
+    rec.list.slice(0, MAP_MAX_PINS).forEach(function(e, i){
       var m = e.menu;
       var sel = m.id === state.selectedId;
-      var col = sel ? '#26225B' : (i < 3 ? '#C8102E' : '#54585A');
-      var mk = L.marker([m.lat, m.lng], { icon: pinIcon(String(i + 1), col) }).addTo(mapLayer);
-      mk.on('click', (function(id){ return function(){ state.activeMenu = id; state.screen = 'menu'; render(); }; })(m.id));
+      var mk;
+      if(i < 10 || sel){
+        var col = sel ? '#26225B' : (i < 3 ? '#C8102E' : '#54585A');
+        mk = L.marker([m.lat, m.lng], { icon: pinIcon(String(i + 1), col), zIndexOffset: sel ? 1000 : (500 - i) });
+      } else {
+        mk = L.circleMarker([m.lat, m.lng], {
+          radius:5, color:'#FFFFFF', weight:2, fillColor:'#54585A', fillOpacity:.9
+        });
+        mk.bindTooltip(esc(m.name), { direction:'top', offset:[0, -4] });
+      }
+      mk.addTo(mapLayer);
+      mk.on('click', open(m.id));
       pts.push([m.lat, m.lng]);
     });
     if(pts.length > 1) map.fitBounds(pts, { padding:[30, 30], maxZoom:16 });

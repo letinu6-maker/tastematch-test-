@@ -14,7 +14,7 @@ const API_KEY = process.env.VISITSEOUL_API_KEY;
 // 비짓서울 API로 요청을 대신 보내주는 얇은 프록시.
 // 브라우저에서 직접 호출하면 API 키가 그대로 노출되기 때문에,
 // 서버(이 파일)에서만 키를 붙여서 호출합니다.
-async function callVisitSeoul(method, endpoint, { query, body } = {}) {
+async function callVisitSeoul(method, endpoint, { query, body, timeoutMs = 12000 } = {}) {
   if (!API_KEY || API_KEY === '여기에_발급받은_API_키를_입력하세요') {
     const err = new Error(
       'VISITSEOUL_API_KEY가 설정되지 않았습니다. .env 파일에 발급받은 API 키를 입력하세요.'
@@ -30,15 +30,33 @@ async function callVisitSeoul(method, endpoint, { query, body } = {}) {
     }
   }
 
-  const res = await fetch(url, {
-    method,
-    headers: {
-      Accept: 'application/json;charset=UTF-8',
-      'VISITSEOUL-API-KEY': API_KEY,
-      ...(body ? { 'Content-Type': 'application/json;charset=UTF-8' } : {}),
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  // 응답이 없으면 영원히 기다리지 않도록 타임아웃을 건다
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  let res;
+  try {
+    res = await fetch(url, {
+      method,
+      headers: {
+        Accept: 'application/json;charset=UTF-8',
+        'VISITSEOUL-API-KEY': API_KEY,
+        ...(body ? { 'Content-Type': 'application/json;charset=UTF-8' } : {}),
+      },
+      body: body ? JSON.stringify(body) : undefined,
+      signal: controller.signal,
+    });
+  } catch (e) {
+    const err = new Error(
+      e && e.name === 'AbortError'
+        ? `비짓서울 API 응답이 ${timeoutMs}ms 안에 오지 않았습니다.`
+        : `비짓서울 API 호출에 실패했습니다: ${(e && e.message) || e}`
+    );
+    err.code = 'UPSTREAM_ERROR';
+    err.status = 504;
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
 
   const text = await res.text();
   let data;
@@ -235,6 +253,7 @@ async function infoWithRetry(cid, lang, attempts = 2) {
 async function buildPool(lang) {
   const pool = pools[lang];
   try {
+    pool.stage = 'categories';
     let codes = ['Cz9d1h6'];
     try {
       const cats = await callVisitSeoul('GET', '/category/list');
@@ -242,6 +261,7 @@ async function buildPool(lang) {
     } catch { /* 카테고리 조회 실패 시 기본 코드로 진행 */ }
     codes = codes.slice(0, 8);
 
+    pool.stage = 'listing';
     const cids = [];
     const seen = new Set();
     for (const code of codes) {
@@ -255,12 +275,14 @@ async function buildPool(lang) {
           items.forEach((it) => {
             if (it && it.cid && !seen.has(it.cid)) { seen.add(it.cid); cids.push(it.cid); }
           });
+          pool.total = Math.min(cids.length, POOL_TARGET);
         } catch { /* 한 페이지 실패는 건너뛴다 */ }
         if (cids.length >= POOL_TARGET) break;
       }
       if (cids.length >= POOL_TARGET) break;
     }
 
+    pool.stage = 'details';
     pool.total = Math.min(cids.length, POOL_TARGET);
     const queue = cids.slice(0, POOL_TARGET);
 
@@ -278,7 +300,9 @@ async function buildPool(lang) {
       Array.from({ length: POOL_CONCURRENCY }, () => worker())
     );
 
+    pool.stage = 'done';
     pool.status = pool.places.length ? 'ready' : 'error';
+    if (!pool.places.length) pool.error = '좌표가 있는 음식 콘텐츠를 찾지 못했습니다.';
     pool.at = Date.now();
     console.log(`[pool:${lang}] 완료 — ${pool.places.length}곳 / 시도 ${pool.done}건`);
   } catch (err) {
@@ -297,7 +321,7 @@ function ensurePool(lang) {
   // 업스트림이 죽었을 때 요청마다 재수집이 몰리지 않도록 쿨다운을 둔다
   const retryable = cur && cur.status === 'error' && Date.now() - cur.at > POOL_RETRY_MS;
   if (!cur || stale || retryable) {
-    pools[lang] = { status: 'building', done: 0, total: 0, places: [], at: Date.now(), error: '' };
+    pools[lang] = { status: 'building', stage: 'start', done: 0, total: 0, places: [], at: Date.now(), error: '' };
     buildPool(lang);
   }
   return pools[lang];
@@ -310,6 +334,7 @@ app.get('/api/places', (req, res) => {
   res.json({
     ok: true,
     status: pool.status,
+    stage: pool.stage || '',
     done: pool.done,
     total: pool.total,
     count: pool.places.length,

@@ -1,0 +1,387 @@
+/* 다국어 — UI 사전(한/영)과 번역 함수 */
+
+import { state } from './state.js';
+
+/* ============================================================
+   다국어 — UI는 한국어·영어, 콘텐츠는 비짓서울 API의 언어별 응답 사용
+   ============================================================ */
+
+var LANGS = [
+  { key:"ko", label:"한국어", api:"ko" },
+  { key:"en", label:"English", api:"en" }
+];
+
+var I18N_EN = {
+  "내 주변 식당 찾으러 가기":"Find restaurants near me",
+  "주변 식당을 찾고 있어요":"Finding restaurants near you",
+  "반경을 넓히면 더 많은 곳이 보여요":"Widen the radius to see more places",
+  "비짓서울 API에 연결하는 중이에요":"Connecting to the VisitSeoul API",
+  "추천 시작하기":"Start",
+  "시작하기 · 7문항":"Start · 7 questions",
+  "저장된 프로필로 계속하기":"Continue with saved profile",
+  "당신의 한 입을 찾습니다":"Find your next bite in Seoul",
+  "국적별 선호 데이터와 당신의 입맛, 지금 있는 자리에서의 거리를 겹쳐":"We combine preference data for your nationality, your own taste settings and how far you are willing to walk to pick",
+  "지금 걸어갈 수 있는":"a meal you can walk to right now",
+  "한 끼를 고릅니다. 알레르기·채식·할랄 조건은 추천에서 자동으로 걸러냅니다.":". Allergy, vegetarian and halal conditions are filtered out automatically.",
+  "샘플 데이터로 동작하는 프로토타입입니다. 실제 서비스에서는 비짓서울 API의 음식 콘텐츠와 실시간 SNS 지표를 연결합니다.":"Every place shown is live content from the VisitSeoul Open API. Spice level and allergens are estimated from the venue name and signature menu.",
+  "비짓서울 API":"VisitSeoul API",
+  "국적별 선호 데이터":"Nationality preference data",
+  "반경 기반 주변 추천":"Radius-based nearby search",
+  "비짓서울 음식 콘텐츠":"VisitSeoul food content",
+
+  "국적이 어떻게 되세요?":"Where are you visiting from?",
+  "국적별 메뉴 선호 통계를 추천 점수의 28%로 반영합니다.":"Nationality-based preference data accounts for 28% of the match score.",
+  "새로운 메뉴, 어떻게 고르세요?":"How do you pick something new?",
+  "미식가 유형을 결정하는 첫 번째 축입니다.":"This is the first axis of your taste persona.",
+  "식당 분위기는 어떤 쪽이 좋아요?":"What kind of place do you prefer?",
+  "미식가 유형을 결정하는 두 번째 축입니다.":"This is the second axis of your taste persona.",
+  "매운맛, 어디까지 괜찮으세요?":"How much heat can you take?",
+  "한국 음식은 같은 이름이어도 매운 정도가 크게 다릅니다.":"Korean dishes with the same name can vary a lot in spiciness.",
+  "알레르기나 못 먹는 재료가 있나요?":"Any allergies or ingredients to avoid?",
+  "선택한 재료가 들어간 메뉴는 추천에서 완전히 제외됩니다.":"Anything containing what you select is removed from your recommendations.",
+  "채식 유형이 있나요?":"Do you follow a vegetarian diet?",
+  "해당하는 유형을 만족하는 메뉴만 남깁니다.":"Only places matching your diet are kept.",
+  "할랄 인증이 필요하세요?":"Do you need halal food?",
+  "할랄 인증이 확인된 메뉴만 추천합니다.":"Only places with halal information are recommended.",
+  "할랄 인증 또는 성분이 확인된 메뉴만 추천합니다.":"Only places with halal information from the API are recommended.",
+
+  "방한 관광객 수가 많은 국가 순으로 정렬했습니다. 목록에 없으면 직접 입력해 주세요.":"Sorted by visitor numbers to Korea. If your country is not listed, type it in.",
+  "국가 검색 (예: 캐나다, 태국)":"Search countries (e.g. Canada, Thailand)",
+  "재료 검색 (예: 갑각류, 글루텐)":"Search ingredients (e.g. shellfish, gluten)",
+  "예: 브라질, 스페인":"e.g. Brazil, Spain",
+  "예: 참외, 키위":"e.g. melon, kiwi",
+  "검색 결과가 없어요. 아래":"No results.",
+  "으로 추가해 주세요.":"Use the button below to add it.",
+  "목록에 없네요.":"Not in the list?",
+  "직접 입력":"Type it in",
+  "+ 직접 입력":"+ Type it in",
+  "추가":"Add",
+  "해당 국가":"your country",
+
+  "1 = 순한맛 · 10 = 불닭":"1 = mild · 10 = fire chicken",
+  "김치도 매워요":"Kimchi is spicy to me",
+  "불닭 완주 가능":"I can finish buldak",
+  "순한 편이시네요. 김치·고추장이 들어간 기본 메뉴도 맵게 느껴질 수 있어 그 점까지 감안해 추천할게요.":"You prefer mild food. Even standard dishes with kimchi or gochujang may taste hot, so we will factor that in.",
+  "한국인 평균과 비슷한 수준이에요. 대부분의 대표 메뉴를 무리 없이 즐길 수 있습니다.":"About the Korean average. You should be comfortable with most signature dishes.",
+  "매운 음식을 즐기시는군요. 낙지볶음이나 닭갈비 같은 본격적인 메뉴를 추천 상위에 올릴게요.":"You enjoy heat. Properly spicy dishes will be ranked higher for you.",
+  "한국인 중에서도 상위권입니다. 불닭 계열까지 추천 대상에 넣겠습니다.":"That is high even by Korean standards. Fire-chicken level dishes are on the table.",
+
+  "여러 개를 고를 수 있어요. 고른 재료가 들어간 메뉴는 추천 목록에서 아예 빠집니다.":"You can choose several. Anything containing them is dropped from your list.",
+  "없어요":"None",
+  "없음":"None",
+  "해당없음":"Not applicable",
+  "제한 없음":"No restriction",
+  "고른 유형을 모두 만족하는 메뉴만 남깁니다.":"Only places meeting every selected diet are kept.",
+  "할랄 음식만 보여주기":"Show halal places only",
+  "모든 메뉴를":"all places",
+  "할랄 인증 메뉴만":"halal places only",
+  "대상으로 추천합니다.":"will be recommended.",
+  "지금은":"Right now,",
+
+  "땅콩":"Peanut", "견과류":"Tree nuts", "우유":"Milk", "계란":"Egg",
+  "갑각류":"Crustacean", "조개·연체류":"Shellfish / mollusk", "밀·글루텐":"Wheat / gluten",
+  "대두":"Soy", "생선":"Fish", "메밀":"Buckwheat", "돼지고기":"Pork", "소고기":"Beef", "참깨":"Sesame",
+  "완전채식 (비건)":"Vegan", "락토 (유제품 O)":"Lacto (dairy OK)",
+  "오보 (달걀 O)":"Ovo (egg OK)", "페스코 (해산물 O)":"Pesco (seafood OK)",
+
+  "중국":"China", "일본":"Japan", "대만":"Taiwan", "미국":"USA", "베트남":"Vietnam",
+  "홍콩":"Hong Kong", "필리핀":"Philippines", "태국":"Thailand", "싱가포르":"Singapore",
+  "말레이시아":"Malaysia", "인도네시아":"Indonesia", "영국":"UK", "캐나다":"Canada",
+  "호주":"Australia", "프랑스":"France", "독일":"Germany",
+
+  "낯선 메뉴부터 도전해요":"I go for the unfamiliar first",
+  "처음 보는 이름일수록 끌립니다":"The stranger the name, the better",
+  "모험형":"Adventurous",
+  "지금 SNS에서 뜨는 메뉴요":"Whatever is trending right now",
+  "화제가 되는 건 일단 먹어봐야죠":"If people are talking about it, I want it",
+  "트렌드형":"Trend-led",
+  "검증된 맛집이 편해요":"I prefer proven places",
+  "실패 없는 선택이 최고입니다":"A safe choice is the best choice",
+  "정통파":"Classicist",
+  "조용한 로컬 식당":"Quiet local spots",
+  "현지인만 아는 골목 노포":"Back-alley places only locals know",
+  "로컬파":"Local-leaning",
+  "둘 다 상관없어요":"Either is fine",
+  "맛만 좋으면 어디든":"Anywhere, as long as it is good",
+  "균형파":"Balanced",
+  "사진 찍기 좋고 활기찬 곳":"Lively, photogenic places",
+  "트렌디한 인기 맛집":"Trendy and popular",
+  "핫플파":"Hotspot-leaning",
+
+  "골목 개척자":"Alley Pioneer",
+  "지도에 없는 골목을 먼저 걷는 사람":"You walk the alleys the maps leave out",
+  "관광 안내서에 실린 곳은 이미 재미가 없습니다. 간판도 흐릿한 노포에서 처음 보는 이름의 메뉴를 시키고, 그게 무슨 맛인지 스스로 알아내는 걸 즐기죠. 서울에서 가장 깊은 맛은 대개 이런 사람이 먼저 찾아냅니다.":"Anywhere already in a guidebook has lost its appeal. You order a dish you have never heard of at a place with a faded sign, and enjoy working out what it tastes like on your own. The deepest flavours in Seoul are usually found first by people like you.",
+  "노포 탐사":"Old-shop hunting", "현지어 메뉴판":"Korean-only menus", "발견의 기쁨":"Joy of discovery",
+  "무경계 미식가":"Borderless Eater",
+  "장소는 상관없어요, 처음 보는 메뉴면 됩니다":"The place does not matter, the dish being new does",
+  "분위기나 인테리어에는 큰 관심이 없습니다. 기준은 오직 하나, 아직 안 먹어본 것인가. 노포든 신상 카페든 가리지 않고 들어가서 가장 낯선 메뉴를 시킵니다. 하루에 네 끼도 가능한 타입.":"Atmosphere and interiors barely register. There is only one test: have I eaten this before? Old shop or brand-new cafe, you walk in and order the least familiar thing on the menu. Four meals a day is well within range.",
+  "가리지 않음":"No preferences", "신메뉴 우선":"New dishes first", "하루 네 끼":"Four meals a day",
+  "번개 도전자":"Lightning Challenger",
+  "핫플에서도 제일 낯선 메뉴를 시키는 사람":"Even at a hotspot, you order the strangest thing",
+  "사람 많은 곳의 에너지를 좋아하지만, 남들과 같은 걸 시키지는 않습니다. 줄 서 있는 가게에 들어가 메뉴판 맨 아래 처음 보는 이름을 고르는 쪽이죠. 속도도 빠릅니다. 한 곳에 오래 머물기보다 여러 곳을 거칩니다.":"You like the energy of a crowd, but you will not order what everyone else is ordering. You join the queue, then pick the unfamiliar name at the bottom of the menu. You move fast, too, covering several places rather than settling into one.",
+  "비주류 메뉴":"Off-menu picks", "빠른 회전":"Fast turnover", "한입씩":"One bite each",
+  "숨은 화제 헌터":"Early-Signal Hunter",
+  "뜨기 직전의 로컬을 먼저 찾아내는 사람":"You find local places just before they blow up",
+  "유행은 챙기지만 이미 붐비는 곳은 늦었다고 생각합니다. 언급량이 막 오르기 시작한 조용한 동네 가게를 찾아내 남들보다 먼저 다녀오는 게 목표죠. 결과적으로 가장 좋은 타이밍에 가장 좋은 자리에 앉습니다.":"You follow trends, but a place that is already packed is a place you are late to. You look for the quiet neighbourhood shop whose mentions have just begun to climb, and get there first. The result is the best seat at the best moment.",
+  "언급량 급상승":"Rising mentions", "선점":"Getting there first", "한적한 시간대":"Off-peak hours",
+  "인플루언서 미식가":"Influencer Diner",
+  "화제의 메뉴는 일단 다 먹어봐야 하는 사람":"If a dish is the talk of the city, you have to try it",
+  "지금 서울에서 무엇이 화제인지 늘 알고 있습니다. 장소의 성격은 따지지 않고, 화제성이 곧 방문 이유가 되죠. 먹은 것을 기록하고 공유하는 것까지가 한 끼의 완성입니다.":"You always know what Seoul is talking about. The character of the venue matters less than the fact that people are talking, and a meal is not finished until it has been recorded and shared.",
+  "실시간 화제":"Live buzz", "기록과 공유":"Record and share", "타이밍 감각":"Sense of timing",
+  "핫플 스트리터":"Hotspot Streeter",
+  "지금 가장 뜨거운 곳에 가장 먼저 도착하는 사람":"First to arrive wherever the city is hottest",
+  "줄이 길수록 확신이 생기는 타입입니다. 성수, 연남, 을지로처럼 지금 사람이 몰리는 거리를 걸으며 화제의 가게를 차례로 방문합니다. 한 곳에서 한두 개만 먹고 다음 가게로 이동하는 스트리트 스타일.":"A longer queue only makes you more certain. You walk the streets where the crowds are right now and work through the talked-about places one by one, eating a dish or two before moving on.",
+  "웨이팅 감수":"Happy to queue", "거리 단위 이동":"Street by street", "핫플 순회":"Hotspot circuit",
+  "조용한 정석파":"Quiet Traditionalist",
+  "검증된 노포에서 혼자만의 루틴을 지키는 사람":"You keep your own routine at places that have proved themselves",
+  "새로움보다 안정감을 삽니다. 수십 년 같은 메뉴를 내는 가게에서, 붐비지 않는 시간에, 늘 시키던 것을 시키는 편안함이죠. 여행지에서도 이 리듬이 무너지지 않기를 바랍니다.":"You buy reassurance rather than novelty: the same dish, at a shop that has served it for decades, at an hour when it is not busy. You would like that rhythm to survive the trip too.",
+  "노포 정식":"Old-shop set menu", "한산한 시간":"Quiet hours", "같은 메뉴":"The usual order",
+  "든든한 푸드메이트":"Dependable Food Mate",
+  "누구와 가도 실패 없는 선택을 하는 사람":"Whoever you are with, your pick works",
+  "일행 중 누구도 못 먹는 것이 없게 고르는 감각이 있습니다. 매운 정도, 알레르기, 식단까지 두루 살펴 가장 무난하면서도 만족스러운 한 상을 차려내죠. 여행 첫 끼를 맡기기 좋은 사람.":"You have a feel for choosing so that nobody in the group is left out, weighing heat, allergies and diets to land on a table that satisfies everyone. A good person to hand the first meal of a trip to.",
+  "모두 만족":"Everyone happy", "한 상 차림":"Shared table", "안전한 선택":"Safe choice",
+  "안전한 핫플러":"Careful Trend-Follower",
+  "인기 있는 곳 중에서도 확실한 것만 고르는 사람":"At a popular place, you order the sure thing",
+  "활기찬 분위기는 좋지만 모험까지 할 생각은 없습니다. 인기 있는 가게에 가되 그 집의 대표 메뉴, 후기가 가장 많은 메뉴를 시킵니다. 실패 확률이 가장 낮은 방식으로 트렌드를 즐기는 방법이죠.":"You enjoy a lively room but have no interest in gambling with it. You go to the popular place and order its signature dish, the one with the most reviews. It is the lowest-risk way to enjoy a trend.",
+  "검증된 인기":"Proven favourites", "대표 메뉴":"Signature menu", "후기 1위":"Most reviewed",
+
+  "비짓서울 API 음식 콘텐츠 불러오는 중":"Loading VisitSeoul food content",
+  "국적별 선호 통계 대조하는 중":"Comparing nationality preference data",
+  "알레르기 · 채식 · 할랄 조건으로 거르는 중":"Filtering by allergy, vegetarian and halal conditions",
+  "SNS 실시간 화제성 반영하는 중":"Ranking by distance from you",
+  "맞춰보고 있어요":"Matching",
+  "서울에서":"In Seoul,",
+  "여행자 데이터와":"traveller data and",
+
+  "내 유형":"My type", "주변 맛집":"Nearby", "유형 가이드":"Types", "내 조건":"My settings",
+  "당신의 미식가 유형":"Your taste persona",
+  "다른 유형 미리보기":"Previewing another type",
+  "유형으로 미리보는 중":"preview",
+  "유형 기준 추천":"recommendations",
+  "내 유형으로":"Back to my type",
+  "입력한 조건":"Your settings",
+  "국적":"Nationality", "매운맛":"Spice", "분위기":"Atmosphere",
+  "주변 상위 추천":"Top picks nearby",
+  "9가지 유형 둘러보기":"Browse all 9 types",
+  "9가지 미식가 유형":"Nine taste personas",
+  "새로운 메뉴를 고르는 방식(가로 축)과 선호하는 식당 분위기(세로 축)를 조합해 아홉 가지가 나옵니다. 눌러서 다른 유형의 추천도 볼 수 있어요.":"How you choose something new (horizontal axis) combined with the kind of room you prefer (vertical axis) gives nine types. Tap one to see its recommendations.",
+  "미식가 유형":"Taste persona",
+  "유형 소개":"About this type",
+  "이 유형의 기준":"What defines this type",
+  "메뉴 선택":"Choosing", "식당 분위기":"Atmosphere",
+  "이 유형 기준으로 추천 보기":"See recommendations for this type",
+  "내 조건(국적·매운맛·알레르기)은 그대로 두고, 이 유형의 성향만 적용해 다시 계산합니다.":"Your own settings stay as they are; only this type's tendencies are applied.",
+  "내 추천 맛집 보기":"See my recommendations",
+
+  "현재 위치":"Current location",
+  "현재 위치 (서울 밖)":"Current location (outside Seoul)",
+  "변경":"Change", "닫기":"Close",
+  "📍 지금 내 위치로 설정하기":"📍 Use my current location",
+  "또는 이동 거점에서 고르기":"Or pick a starting point",
+  "이 브라우저에서는 위치를 가져올 수 없어요. 아래에서 거점을 골라주세요.":"This browser cannot provide your location. Pick a starting point below.",
+  "위치를 확인하는 중…":"Getting your location…",
+  "위치 권한이 없어요. 아래에서 거점을 골라주세요.":"Location permission was denied. Pick a starting point below.",
+  "서울 밖이라 반경 안에 결과가 없을 수 있어요. 거점을 골라 데모로 볼 수 있습니다.":"You are outside Seoul, so there may be nothing in range. Pick a starting point to try it out.",
+  "명동역":"Myeongdong Stn.", "종로3가역":"Jongno 3-ga Stn.", "홍대입구역":"Hongik Univ. Stn.",
+  "이태원역":"Itaewon Stn.", "서울역":"Seoul Stn.", "동대문역사문화공원":"DDP Stn.",
+  "성수역":"Seongsu Stn.", "강남역":"Gangnam Stn.",
+
+  "반경":"Radius", "곳":" places", "보기":"Show", "접기":"Hide",
+  "매치도 = 국적 선호 28% · 매운맛 22% ·":"Match = nationality 28% · spice 22% ·",
+  "거리 20%":"distance 20%",
+  "· 탐색 성향 16% · 분위기 14%":"· exploration 16% · atmosphere 14%",
+  "에게 가까운 순서":"— nearest first",
+  "🔎 비짓서울 API에서 실제 음식 콘텐츠를 불러오는 중이에요…":"🔎 Loading real food content from the VisitSeoul API…",
+  "🔎 비짓서울 API에서 불러오는 중 —":"🔎 Loading from the VisitSeoul API —",
+  "비짓서울 API에서 데이터를 불러오지 못했어요.":"Could not load data from the VisitSeoul API.",
+  "다시 시도하기":"Try again",
+  "안에는 조건에 맞는 곳이 없어요.":"has nothing matching your settings.",
+  "가장 가까운 곳은":"The nearest is",
+  "거리예요. 반경을 넓혀보세요.":"away. Try widening the radius.",
+  "제외된":"Excluded", "곳 · 반경 밖":" · out of range",
+  "· 조건 불일치":"· conditions not met", "· 반경 밖":"· out of range",
+  "목록에 뜨는 곳은 모두 비짓서울 API에 실제로 등록된 콘텐츠이고, 지도의 위치는 API가 준 실제 좌표입니다(OpenStreetMap). 거리·도보 시간은 직선거리 기준 추정값이며, 매운맛·알레르기는 이름·대표 메뉴에서 추정한 값입니다.":"Every place listed is real content registered in the VisitSeoul API, and map positions use the coordinates the API returned (map tiles by OpenStreetMap). Distances and walking times are straight-line estimates, and spice and allergen values are inferred from the venue name and signature menu.",
+  "지도에서 주변":"View", "곳 보기":"places on the map",
+
+  "걸어서":"walk", "분":" min", "거리":"Distance",
+  "/10 추정":"/10 est.", "중간":"Balanced",
+  "채식 가능":"Vegetarian options", "할랄":"Halal",
+  "조용한 로컬":"Quiet local", "트렌디한 핫플":"Trendy hotspot",
+  "익숙한 편":"Familiar", "적당히 새로운":"Fairly new", "낯선 메뉴":"Unfamiliar",
+
+  "뒤로":"Back",
+  "여기서 가는 길":"Getting there",
+  "에서":"from",
+  "· 도보":"· walk",
+  "📍 비짓서울 API가 제공한 실제 좌표(":"📍 Shown at the exact coordinates provided by the VisitSeoul API (",
+  ")로 표시했습니다.":").",
+  "이 점수가 나온 이유":"Why this score",
+  "내 조건과 대조":"Against your settings",
+  "(반경":"(within", "기준)":")",
+  "여행자 선호도":"traveller preference",
+  "매운 정도":"Spice level", "/ 10 (내 기준":"/ 10 (yours:",
+  "알레르기 유발 성분":"Possible allergens",
+  "추정된 성분 없음":"None detected",
+  "채식":"Vegetarian",
+  "채식 관련 표기 있음":"Vegetarian info available",
+  "채식 정보 없음":"No vegetarian info",
+  "관련 표기 있음":"Information available",
+  "정보 없음":"No information",
+  "매운맛·알레르기 성분은 비짓서울 API에 없는 항목이라, 가게 이름·대표 메뉴·태그를 기준으로":"Spice level and allergens are not fields in the VisitSeoul API, so they are",
+  "추정":"estimated",
+  "한 값입니다. 할랄·채식은 API가 제공하는 표기를 그대로 씁니다.":"from the venue name, signature menu and tags. Halal and vegetarian information comes straight from the API.",
+  "비짓서울 원본 데이터":"Raw VisitSeoul data",
+  "다음 한 입":"Next bite",
+  "응답에 데이터가 없어요":"The response contained no data",
+
+  "국적별 선호도":"Nationality preference",
+  "매운맛 적합도":"Spice fit",
+  "현재 위치에서 거리":"Distance from you",
+  "탐색 성향 적합도":"Exploration fit",
+  "분위기 적합도":"Atmosphere fit",
+
+  "값을 바꾸면 유형과 추천이 즉시 다시 계산됩니다.":"Changing a value recalculates your type and recommendations immediately.",
+  "수정":"Edit",
+  "처음부터 다시 하기":"Start over",
+  "저장하고 돌아가기":"Save and go back",
+  "취소":"Cancel", "다음":"Next", "이전":"Back",
+  "알레르기 · 못 먹는 재료":"Allergies / avoid",
+  "메뉴 선택 성향":"Choosing style",
+  "같은 조건을 입력한":"Among",
+  "여행자 중 이 유형의 비율이에요.":"travellers who entered the same settings, this is how many share your type.",
+  "2026 서울관광재단 비짓서울 API 데이터·AI 활용 아이디어 공모전 · 미식 프로파일러 프로토타입. 메뉴 데이터는 비짓서울 API 음식 콘텐츠 구조를 본뜬 샘플입니다.":"2026 Seoul Tourism Organization VisitSeoul API Data & AI Idea Competition · TasteMatch Seoul prototype. All venue data is live content from the VisitSeoul Open API.",
+
+  "한식":"Korean", "분식":"Street food", "카페":"Cafe", "중식":"Chinese",
+  "일식":"Japanese", "양식":"Western", "기타":"Other",
+  "맛집":"Restaurant", "식당":"Restaurant", "한정식":"Korean set menu",
+  "국수":"Noodles", "고기":"Grilled meat", "해산물":"Seafood", "서울":"Seoul",
+  "이름 없음":"Unnamed",
+  "할랄 전용":"Halal only",
+  "콘텐츠 ID (cid)":"Content ID (cid)", "분류":"Category", "주소":"Address",
+  "가까운 역":"Nearest station", "전화":"Phone", "영업시간":"Opening hours",
+  "휴무":"Closed", "할랄 표기":"Halal labelling", "채식 표기":"Vegetarian labelling", "태그":"Tags",
+  "비짓서울 API를 호출하는 중…":"Calling the VisitSeoul API…",
+  "호출에 실패했어요":"The request failed",
+  "🔄 지금 비짓서울 API에서 다시 불러오기":"🔄 Reload from the VisitSeoul API now",
+  "이 화면의 이름·주소·좌표·영업정보는 모두 비짓서울 API 콘텐츠 상세(contents/info) 응답에서 그대로 가져온 값입니다.":"The name, address, coordinates and opening details on this screen come straight from the VisitSeoul contents/info response.",
+  "지도를 불러오지 못했어요.<br>잠시 후 다시 열어보세요.":"Could not load the map.<br>Please try again shortly.",
+  "현재 위치에서 가까운 순으로 정렬하는 중":"Ranking by distance from you",
+  "화면에 나오는 장소는 모두 비짓서울 API에서 실시간으로 받아온 실제 콘텐츠입니다. 매운맛·알레르기는 가게 이름과 대표 메뉴에서 추정합니다.":"Every place shown is live content from the VisitSeoul Open API. Spice level and allergens are estimated from the venue name and signature menu.",
+  "2026 서울관광재단 비짓서울 API 데이터·AI 활용 아이디어 공모전 · 미식 프로파일러 프로토타입. 모든 장소 데이터는 비짓서울 API 실시간 응답입니다.":"2026 Seoul Tourism Organization VisitSeoul API Data & AI Idea Competition · TasteMatch Seoul prototype. All venue data comes live from the VisitSeoul Open API.",
+  "국적별 메뉴 선호 통계를 추천 점수의 28%로 반영합니다.":"Nationality-based preference data accounts for 28% of the match score.",
+  "할랄 정보 없음":"No halal information",
+  "비짓서울 API에서 음식 콘텐츠를 찾지 못했어요.":"No food content was found in the VisitSeoul API.",
+  "좌표가 있는 음식 콘텐츠를 찾지 못했어요.":"No food content with coordinates was found.",
+  "비짓서울 API에 등록된 장소입니다.":"A place registered in the VisitSeoul API.",
+  "시":":", "분 ":" min "
+};
+
+var TPL = {
+  ko: {
+    nearest: "가장 가까운 곳은 {name} — {dist} 거리예요. 반경을 넓혀보세요.",
+    emptyRadius: "반경 {r} 안에는 조건에 맞는 곳이 없어요.",
+    offnote: "제외된 {n}곳 · 반경 밖 {far} · 조건 불일치 {blocked}",
+    nearOrder: "{persona}에게 가까운 순서",
+    mapCount: "지도에서 주변 {n}곳 보기",
+    cohort: "같은 조건을 입력한 {nat} 여행자 중 이 유형의 비율이에요.",
+    fromOrigin: "{origin}에서",
+    distWalk: "{dist} · 도보 {min}분",
+    walkMin: "걸어서 {min}분",
+    spiceAria: "매운맛 {n}점",
+    distReason: "현재 위치에서 {dist} · 걸어서 {min}분이에요",
+    natReason: "{nat} 여행자의 {kind} 선호도 {score}점이에요",
+    spiceExact: "매운맛 {v}/10(추정) — 설정한 수준과 일치해요",
+    spiceNear: "매운맛 {v}/10(추정) — 감당 가능한 범위예요",
+    spicePlain: "매운맛 {v}/10(추정)",
+    exploreAdv: "{novelty} — 도전을 즐기는 성향과 맞아요",
+    exploreTrend: "{vibe} 분위기로 분류됐어요",
+    exploreProven: "무난하게 고르기 좋은 유형이에요",
+    vibeReason: "{vibe} 분위기 — 선호와 맞아요",
+    radiusBasis: "{dist} (반경 {r} 기준)",
+    spiceMine: "{v} / 10 (내 기준 {mine})",
+    natPref: "{nat} 여행자 선호도",
+    loadProgress: "🔎 비짓서울 API에서 불러오는 중 — {done} / {total}곳",
+    poolLoading: "🔎 비짓서울 API에서 실제 음식 콘텐츠를 불러오는 중이에요…",
+    reloadedAt: "✅ {at}에 다시 불러왔어요 — {name}",
+    blockedAllergy: "알레르기 추정 · {list}",
+    coordNote: "📍 비짓서울 API가 제공한 실제 좌표({lat}, {lng})로 표시했습니다.",
+    placeCount: "{n}곳"
+  },
+  en: {
+    nearest: "The nearest is {name}, {dist} away. Try widening the radius.",
+    emptyRadius: "Nothing within {r} matches your settings.",
+    offnote: "{n} excluded · {far} out of range · {blocked} conditions not met",
+    nearOrder: "Nearest first for the {persona}",
+    mapCount: "View {n} places on the map",
+    cohort: "Among travellers from {nat} who entered the same settings, this is how many share your type.",
+    fromOrigin: "From {origin}",
+    distWalk: "{dist} · {min} min walk",
+    walkMin: "{min} min walk",
+    spiceAria: "Spice level {n}",
+    distReason: "{dist} from you · about {min} minutes on foot",
+    natReason: "{kind} scores {score} with travellers from {nat}",
+    spiceExact: "Spice {v}/10 (est.) — exactly your level",
+    spiceNear: "Spice {v}/10 (est.) — within your range",
+    spicePlain: "Spice {v}/10 (est.)",
+    exploreAdv: "{novelty} — suits your appetite for the new",
+    exploreTrend: "Classed as a {vibe} room",
+    exploreProven: "An easy, low-risk choice",
+    vibeReason: "{vibe} — matches what you like",
+    radiusBasis: "{dist} (within {r})",
+    spiceMine: "{v} / 10 (yours: {mine})",
+    natPref: "Preference for {nat} travellers",
+    loadProgress: "🔎 Loading from the VisitSeoul API — {done} / {total}",
+    poolLoading: "🔎 Loading real food content from the VisitSeoul API…",
+    reloadedAt: "✅ Reloaded at {at} — {name}",
+    blockedAllergy: "Possible allergen · {list}",
+    coordNote: "📍 Shown at the exact coordinates from the VisitSeoul API ({lat}, {lng}).",
+    placeCount: "{n} places"
+  }
+};
+
+function trSeg(seg){
+  if(typeof state === 'undefined' || !state || state.lang !== 'en') return seg;
+  if(!/[가-힣]/.test(seg)) return seg;
+  var d = I18N_EN;
+  if(d[seg] != null) return d[seg];
+  var k = seg.trim();
+  if(k && d[k] != null){
+    var lead = seg.slice(0, seg.indexOf(k));
+    var tail = seg.slice(seg.indexOf(k) + k.length);
+    return lead + d[k] + tail;
+  }
+  return seg;
+}
+/* 태그는 그대로 두고 텍스트만 번역 (속성 중 placeholder/aria-label은 번역) */
+export function t(str){
+  if(str == null || typeof state === 'undefined' || !state || state.lang !== 'en') return str;
+  var s = String(str);
+  /* 속성값은 태그가 잘려 있어도 먼저 번역 */
+  s = s.replace(/(placeholder|aria-label|title)="([^"]*)"/g, function(mm, attr, val){
+    return attr + '="' + trSeg(val) + '"';
+  });
+  if(s.indexOf('<') < 0 && s.indexOf('>') < 0) return trSeg(s);
+  return s.replace(/(<[^>]*>?)|([^<]+)/g, function(m, tag, text){
+    if(tag) return tag;
+    /* 문자열이 태그 중간에서 시작하면, 마지막 '>' 뒤쪽만 번역 */
+    var gt = text.lastIndexOf('>');
+    if(gt >= 0) return text.slice(0, gt + 1) + trSeg(text.slice(gt + 1));
+    return trSeg(text);
+  });
+}
+export function tpl(id, vars){
+  var table = TPL[state.lang] || TPL.ko;
+  var s = table[id] || TPL.ko[id] || '';
+  return s.replace(/\{(\w+)\}/g, function(m, k){
+    return vars && vars[k] != null ? String(vars[k]) : '';
+  });
+}
+export function apiLang(){
+  var l = LANGS.filter(function(x){ return x.key === state.lang; })[0];
+  return l ? l.api : 'ko';
+}
+export function langSwitchHtml(){
+  return '<div class="langbar">' + LANGS.map(function(l){
+    return '<button class="langbtn ' + (state.lang === l.key ? 'on' : '') + '" data-action="lang" data-key="' + l.key + '">' + l.label + '</button>';
+  }).join('') + '</div>';
+}

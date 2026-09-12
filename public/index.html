@@ -473,8 +473,9 @@
   /* 실제 API 응답에서 확인된 음식 카테고리 코드(음식 > 한식) */
   var FOOD_CATEGORY_SEEDS = ['Cz9d1h6'];
   var FOOD_KEYWORDS = ['한식', '맛집', '식당', '한정식', '국수', '고기', '해산물', '카페'];
-  var POOL_CACHE_KEY = 'tastematch.pool.v2';
-  var POOL_MAX = 48;
+  var POOL_CACHE_KEY = 'tastematch.pool.v3';
+  var POOL_FIRST = 60;    /* 이만큼 모이면 화면을 먼저 열어준다 */
+  var POOL_MAX = 260;     /* 나머지는 온보딩 중 백그라운드로 계속 채운다 */
 
   /* --- 외부 데이터 ① 국적별 음식 종류 선호 경향 (자체 큐레이션 지표) --- */
   var NAT_CUISINE = {
@@ -691,7 +692,7 @@
 
       var listCalls = [];
       codes.forEach(function(code){
-        [1, 2].forEach(function(pageNo){
+        [1, 2, 3].forEach(function(pageNo){
           listCalls.push(fetchJson('/api/contents?' + new URLSearchParams({
             com_ctgry_sn:code, lang_code_id:apiLang(), page_no:pageNo })));
         });
@@ -716,12 +717,29 @@
         return;
       }
       state.pool.total = cids.length;
-      state.keepScroll = true; render();
 
-      /* 2단계 — 각 콘텐츠의 상세(좌표·식당 정보)를 동시 5개씩 가져온다 */
-      var idx = 0, active = 0, finished = 0;
+      /* 2단계 — 상세(좌표·식당 정보)를 동시 6개씩 가져온다.
+         POOL_FIRST개가 모이면 곧바로 화면을 열어주고, 나머지는 사용자가
+         온보딩을 진행하는 동안 백그라운드로 계속 채운다. */
+      var idx = 0, active = 0, finished = 0, opened = false;
+
+      /* 온보딩 중 전체를 다시 그리면 입력 포커스가 깨지므로,
+         목록이 보이는 화면에서만 다시 그린다 */
+      function maybeRender(){
+        if(state.screen === 'places' || state.screen === 'result' || state.screen === 'menu'){
+          state.keepScroll = true; render();
+        }
+      }
+      function openPool(){
+        if(opened) return;
+        opened = true;
+        state.pool.status = 'ready';
+        state.pool.filling = true;
+        if(PLACES.length) writePoolCache(PLACES);
+        maybeRender();
+      }
       function pump(){
-        while(active < 5 && idx < cids.length){
+        while(active < 6 && idx < cids.length){
           var nextCid = cids[idx];
           idx++; active++;
           (function(cid){
@@ -732,12 +750,14 @@
             }).catch(function(){}).then(function(){
               active--; finished++;
               state.pool.done = finished;
-              if(finished % 4 === 0 || finished === cids.length){ state.keepScroll = true; render(); }
+              if(!opened && PLACES.length >= POOL_FIRST) openPool();
+              else if(finished % 12 === 0) maybeRender();
               if(finished === cids.length){
+                state.pool.filling = false;
                 state.pool.status = PLACES.length ? 'ready' : 'error';
                 if(!PLACES.length) state.pool.error = t('좌표가 있는 음식 콘텐츠를 찾지 못했어요.');
                 if(PLACES.length) writePoolCache(PLACES);
-                state.keepScroll = true; render();
+                maybeRender();
               } else {
                 pump();
               }
@@ -1409,7 +1429,7 @@
     state.lang = next;
     try{ localStorage.setItem('tastematch.lang', next); }catch(e){}
     PLACES = [];
-    state.pool = { status:'idle', done:0, total:0, error:'', fromCache:false };
+    state.pool = { status:'idle', done:0, total:0, error:'', fromCache:false, filling:false };
     state.rawCache = {};
     loadRealPlaces();
     render();
@@ -1594,7 +1614,7 @@
     geoMsg: '',
     lang: 'ko',
     rawCache: {},
-    pool: { status:'idle', done:0, total:0, error:'', fromCache:false },
+    pool: { status:'idle', done:0, total:0, error:'', fromCache:false, filling:false },
     profile: {
       natKey: null, natCustom: '',
       explore: null, atmosphere: null, spice: null,
@@ -1982,8 +2002,8 @@
         '<div class="pad" style="padding-top:14px">' +
           '<h2 class="display" style="font-size:20px;margin:0 0 4px">' + esc(tpl('nearOrder', { persona:t(per.title) })) + '</h2>' +
           t('<p class="muted" style="margin:0 0 13px">매치도 = 국적 선호 28% · 매운맛 22% · <b>거리 20%</b> · 탐색 성향 16% · 분위기 14%</p>') +
-          (state.pool.status === 'loading' && rec.list.length
-            ? t('<p class="fine" style="margin:0 0 10px">🔎 비짓서울 API에서 불러오는 중 — ') + state.pool.done + ' / ' + state.pool.total + t('곳</p>') : '') +
+          ((state.pool.status === 'loading' || state.pool.filling)
+            ? '<p class="fine" style="margin:0 0 10px">' + esc(tpl('loadProgress', { done:state.pool.done, total:state.pool.total })) + '</p>' : '') +
           notes +
           '<div style="margin-top:12px">' + body + '</div>' +
           t('<p class="fine" style="margin-top:16px">목록에 뜨는 곳은 모두 비짓서울 API에 실제로 등록된 콘텐츠이고, 지도의 위치는 API가 준 실제 좌표입니다(OpenStreetMap). 거리·도보 시간은 직선거리 기준 추정값이며, 매운맛·알레르기는 이름·대표 메뉴에서 추정한 값입니다.</p>') +

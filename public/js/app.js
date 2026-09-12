@@ -3,7 +3,7 @@
 import { setRenderer } from './render-hook.js';
 import { makeOnboarding } from './onboarding.js';
 import { requestGeo } from './geo.js';
-import { state } from './state.js';
+import { loadSaved, state } from './state.js';
 import { apiLang, t } from './i18n.js';
 import { placeFromInfo } from './infer.js';
 import { PLACES, loadRealPlaces, resetPlaces, writePoolCache } from './api.js';
@@ -143,6 +143,15 @@ root.addEventListener('click', function(ev){
 });
 
 onboarding.attach(root);
+
+/* 여권 화면의 탭에서 index.html#places 같은 주소로 돌아오면 그 화면부터 연다 */
+try{
+  var want = (location.hash || '').replace('#', '');
+  if(['result','places','guide','profile'].indexOf(want) >= 0){
+    var savedProfile = loadSaved();
+    if(savedProfile){ state.profile = savedProfile; state.screen = want; }
+  }
+}catch(e){}
 
 try{
   var savedLang = localStorage.getItem('tastematch.lang');

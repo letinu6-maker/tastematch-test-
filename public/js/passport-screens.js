@@ -10,19 +10,23 @@ import { character } from './character.js';
 import { recommend, topReasons } from './score.js';
 import { readStamps, hasStamp, titleOf, stampSvg, stampDate, passportNo,
          STAMP_GOAL, CHECKIN_M } from './stamps.js';
-import { poolStillLoading } from './screens.js';
+import { poolStillLoading, tabs } from './screens.js';
 
 /* ---- 공통 조각 ---- */
 
-export function pnav(active){
+/* 하단 탭은 기본 화면과 같은 것을 쓴다 — 여권은 앱의 다섯 번째 탭이다 */
+export function pnav(){ return tabs('passport', true); }
+
+/* 여권 안에서 옮겨 다니는 세 자리는 화면 위쪽 작은 탭으로 둔다 */
+export function psub(active){
   var items = [
     { key:'cover', label:'여권' },
     { key:'today', label:'오늘의 도장' },
     { key:'book',  label:'스탬프' }
   ];
-  return '<div class="tabs pnav">' + items.map(function(it){
-    return '<button class="tab ' + (active === it.key ? 'on' : '') + '" data-action="pgo" data-key="' + it.key + '">' +
-      '<span>' + esc(t(it.label)) + '</span></button>';
+  return '<div class="psub">' + items.map(function(it){
+    return '<button class="' + (active === it.key ? 'on' : '') + '" data-action="pgo" data-key="' + it.key + '">' +
+      esc(t(it.label)) + '</button>';
   }).join('') + '</div>';
 }
 
@@ -70,6 +74,7 @@ export function screenCover(){
   return '<div class="screen pcover">' +
     '<div class="scroll">' +
       '<div class="langrow">' + langSwitchHtml() + '</div>' +
+      psub('cover') +
       '<div class="book">' +
         '<div class="book-top">' +
           '<span class="crest">✦</span>' +
@@ -108,11 +113,10 @@ export function screenCover(){
           t('여권 펼쳐보기') + '</button>' +
         '<button class="cta ghost" style="margin-top:9px" data-action="start">' +
           t('취향 다시 진단하기') + '</button>' +
-        t('<a class="cta ghost passport-link" style="margin-top:9px" href="index.html">주변 맛집 목록으로</a>') +
         '<p class="fine" style="margin-top:16px">' +
           t('도장을 찍은 곳은 모두 비짓서울 API에 등록된 실제 장소이고, 위치 확인은 API가 준 실제 좌표를 씁니다.') + '</p>' +
       '</div>' +
-    '</div>' + pnav('cover') + '</div>';
+    '</div>' + pnav() + '</div>';
 }
 
 /* ---- 2. 오늘 도장 찍을 곳 (한 곳만) ---- */
@@ -124,7 +128,7 @@ export function screenToday(){
   if(!pick.entry){
     var waiting = poolStillLoading();
     return '<div class="screen">' +
-      '<div class="scroll"><div class="pad">' +
+      '<div class="scroll">' + psub('today') + '<div class="pad">' +
         '<h2 class="display" style="font-size:21px;margin:0 0 10px">' + t('오늘의 도장') + '</h2>' +
         '<div class="empty-state">' +
           (waiting
@@ -135,7 +139,7 @@ export function screenToday(){
         '</div>' +
         '<button class="cta ghost" style="margin-top:12px" data-action="pradius" data-key="5">' +
           t('반경 5km로 넓히기') + '</button>' +
-      '</div></div>' + pnav('today') + '</div>';
+      '</div></div>' + pnav() + '</div>';
   }
 
   var e = pick.entry, m = e.menu;
@@ -150,7 +154,7 @@ export function screenToday(){
                   : t('현재 위치를 켜면 실제로 도장을 찍을 수 있어요')) + '</span></div>';
 
   return '<div class="screen">' +
-    '<div class="scroll">' +
+    '<div class="scroll">' + psub('today') +
       '<div class="today-head">' +
         '<span class="eyebrow">' + t('오늘의 한 곳') + '</span>' +
         '<h2 class="display">' + esc(m.name) + '</h2>' +
@@ -186,7 +190,7 @@ export function screenToday(){
         '<button class="cta ghost" style="margin-top:9px" data-action="geo">' + t('현재 위치 켜기') + '</button>' +
         (state.geoMsg ? '<p class="fine" style="margin-top:10px">' + esc(state.geoMsg) + '</p>' : '') +
       '</div>' +
-    '</div>' + pnav('today') + '</div>';
+    '</div>' + pnav() + '</div>';
 }
 
 /* ---- 3. 도장이 찍히는 순간 ---- */
@@ -198,7 +202,7 @@ export function screenStamped(){
   var title = titleOf(list);
 
   return '<div class="screen stamped">' +
-    '<div class="scroll"><div class="pad" style="text-align:center">' +
+    '<div class="scroll">' + psub('today') + '<div class="pad" style="text-align:center">' +
       '<div class="stamp-drop">' + stampSvg(st, 168) + '</div>' +
       '<h2 class="display" style="font-size:23px;margin:18px 0 6px">' + t('도장을 찍었어요') + '</h2>' +
       '<p class="muted" style="margin:0 0 2px">' + esc(st.name) + '</p>' +
@@ -218,7 +222,7 @@ export function screenStamped(){
 
       '<button class="cta" data-action="pgo" data-key="book">' + t('여권에서 보기') + '</button>' +
       '<button class="cta ghost" style="margin-top:9px" data-action="pgo" data-key="today">' + t('다음 도장 찍으러 가기') + '</button>' +
-    '</div></div>' + pnav('today') + '</div>';
+    '</div></div>' + pnav() + '</div>';
 }
 
 /* ---- 4. 여권 펼치기 ---- */
@@ -238,7 +242,7 @@ export function screenBook(){
   }
 
   return '<div class="screen">' +
-    '<div class="scroll">' +
+    '<div class="scroll">' + psub('book') +
       '<div class="page-head">' +
         '<span class="eyebrow">' + t('서울 미식 여권') + '</span>' +
         '<h2 class="display">' + esc(natLabel(p)) + t(' 여행자의 기록') + '</h2>' +
@@ -257,5 +261,5 @@ export function screenBook(){
         (list.length ? '<button class="cta ghost" style="margin-top:9px" data-action="clear-stamps">' + t('도장 전부 지우기') + '</button>' : '') +
         '<p class="fine" style="margin-top:16px">' + t('도장은 이 브라우저에만 저장됩니다. 실제 서비스에서는 방문 기록이 추천 엔진의 학습 데이터가 됩니다.') + '</p>' +
       '</div>' +
-    '</div>' + pnav('book') + '</div>';
+    '</div>' + pnav() + '</div>';
 }

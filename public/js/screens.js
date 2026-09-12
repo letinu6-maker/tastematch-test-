@@ -22,6 +22,7 @@ var ICON = {
   pin:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-5.7 7-11a7 7 0 1 0-14 0c0 5.3 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/></svg>',
   grid:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.6"/><rect x="14" y="3" width="7" height="7" rx="1.6"/><rect x="3" y="14" width="7" height="7" rx="1.6"/><rect x="14" y="14" width="7" height="7" rx="1.6"/></svg>',
   gear:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M21.5 12h-3M5.5 12h-3M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1M18.7 18.7l-2.1-2.1M7.4 7.4L5.3 5.3"/></svg>',
+  passport:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2.6" width="16" height="18.8" rx="2.2"/><circle cx="12" cy="10" r="3.1"/><path d="M8.6 17h6.8"/></svg>',
   mark:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="11" fill="#FFA300"/><path d="M12 17c-4-3-3-8 0-11 3 3 4 8 0 11z" fill="#26225B"/></svg>'
 };
 
@@ -206,16 +207,26 @@ export function screenAnalyzing(){
     '<div class="steps">' + steps + '</div></div>';
 }
 
-function tabs(active){
+/* 하단 탭은 두 페이지가 함께 쓴다.
+   remote=true 이면 지금 여권 페이지에 있다는 뜻이라, 앞의 네 개가 index.html 로 나가는 링크가 된다. */
+export function tabs(active, remote){
   var items = [
-    { key:'result', label:t('내 유형'), icon:ICON.user },
-    { key:'places', label:t('주변 맛집'), icon:ICON.pin },
-    { key:'guide', label:t('유형 가이드'), icon:ICON.grid },
-    { key:'profile', label:t('내 조건'), icon:ICON.gear }
+    { key:'result',   label:t('내 유형'),    icon:ICON.user },
+    { key:'places',   label:t('주변 맛집'),  icon:ICON.pin },
+    { key:'guide',    label:t('유형 가이드'), icon:ICON.grid },
+    { key:'profile',  label:t('내 조건'),    icon:ICON.gear },
+    { key:'passport', label:t('미식 여권'),  icon:ICON.passport }
   ];
   return '<div class="tabs">' + items.map(function(it){
-    return '<button class="tab ' + (active === it.key ? 'on' : '') + '" data-action="go" data-key="' + it.key + '">' +
-           it.icon + '<span>' + t(it.label) + '</span></button>';
+    var on = active === it.key ? ' on' : '';
+    var isPassport = it.key === 'passport';
+    var leaving = remote ? !isPassport : isPassport;   /* 다른 페이지로 나가는 탭인가 */
+    if(leaving){
+      var href = isPassport ? 'passport.html' : ('index.html#' + it.key);
+      return '<a class="tab' + on + '" href="' + href + '">' + it.icon + '<span>' + it.label + '</span></a>';
+    }
+    return '<button class="tab' + on + '" data-action="' + (remote ? 'pgo' : 'go') + '" ' +
+           'data-key="' + (remote ? 'cover' : it.key) + '">' + it.icon + '<span>' + it.label + '</span></button>';
   }).join('') + '</div>';
 }
 
@@ -268,7 +279,6 @@ export function screenResult(){
           (rec.list.length ? esc(tpl('mapCount', { n:rec.list.length }))
                            : esc(t('내 주변 식당 찾으러 가기'))) + '</button>' +
         t('<button class="cta ghost" style="margin-top:8px" data-action="go" data-key="guide">9가지 유형 둘러보기</button>') +
-        t('<a class="cta ghost passport-link" style="margin-top:8px" href="passport.html">✦ 서울 미식 여권 열기</a>') +
       '</div>' +
     '</div>' + tabs('result') + '</div>';
 }

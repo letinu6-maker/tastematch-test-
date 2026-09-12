@@ -12,8 +12,7 @@ var LANGS = [
 ];
 
 var I18N_EN = {
-  "✦ 서울 미식 여권 열기":"✦ Open the Seoul Taste Passport",
-  "주변 맛집 목록으로":"Back to the restaurant list",
+  "미식 여권":"Passport",
   "여권":"Passport",
   "오늘의 도장":"Today's stamp",
   "스탬프":"Stamps",

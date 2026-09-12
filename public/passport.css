@@ -119,3 +119,15 @@
 
 /* ---------- 하단 탭 ---------- */
 .pnav .tab{ font-size:12px; padding:12px 2px; }
+
+/* 여권 안에서 옮겨 다니는 작은 탭 */
+.psub{
+  display:flex; gap:5px; padding:12px 16px 2px;
+  background:var(--paper); position:sticky; top:0; z-index:4;
+}
+.psub button{
+  flex:1; border:1px solid var(--line); background:var(--card); color:var(--ink-3);
+  border-radius:999px; padding:8px 6px; font-size:12px; font-weight:700; font-family:inherit;
+}
+.psub button.on{ background:var(--ink); border-color:var(--ink); color:var(--paper); }
+.pcover .psub{ background:var(--paper); }

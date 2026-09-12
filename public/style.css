@@ -382,3 +382,7 @@ input{ font-family:inherit; }
 .fine{ font-size:11px; color:var(--ink-3); line-height:1.65; }
 /* 두 화면(추천 목록 ↔ 미식 여권)을 오가는 링크 — 버튼과 같은 모양 */
 a.cta{ display:block; text-align:center; text-decoration:none; }
+
+/* 탭 다섯 개 — 여권 탭이 늘면서 폭이 좁아졌다 */
+.tab{ font-size:10px; letter-spacing:-.02em; }
+a.tab{ text-decoration:none; }

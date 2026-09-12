@@ -1,13 +1,15 @@
 /* 진입점 — 화면 렌더링, 이벤트 처리, 언어 전환, 시작 */
 
 import { setRenderer } from './render-hook.js';
-import { STORE_KEY, loadSaved, saveProfile, state } from './state.js';
+import { makeOnboarding } from './onboarding.js';
+import { requestGeo } from './geo.js';
+import { state } from './state.js';
 import { apiLang, t } from './i18n.js';
 import { placeFromInfo } from './infer.js';
 import { PLACES, loadRealPlaces, resetPlaces, writePoolCache } from './api.js';
 import { ORIGINS } from './score.js';
 import { renderMaps } from './map.js';
-import { ANALYZE_STEP_KEYS, algChipsHTML, natChipsHTML, screenAnalyzing, screenGuide, screenIntro, screenMenu, screenOnboarding, screenPlaces, screenProfile, screenResult, screenType, stepValid } from './screens.js';
+import { screenAnalyzing, screenGuide, screenIntro, screenMenu, screenOnboarding, screenPlaces, screenProfile, screenResult, screenType } from './screens.js';
 
 function setLang(next){
   if(state.lang === next) return;
@@ -57,143 +59,18 @@ function render(){
   renderMaps();
 }
 
-function toggleIn(arr, key){
-  var i = arr.indexOf(key);
-  if(i >= 0) arr.splice(i, 1); else arr.push(key);
-}
-
-function requestGeo(){
-  if(!navigator.geolocation){
-    state.geoMsg = t('이 브라우저에서는 위치를 가져올 수 없어요. 아래에서 거점을 골라주세요.');
-    state.keepScroll = true; render(); return;
-  }
-  state.geoMsg = t('위치를 확인하는 중…');
-  state.keepScroll = true; render();
-  navigator.geolocation.getCurrentPosition(function(pos){
-    var la = pos.coords.latitude, ln = pos.coords.longitude;
-    var inSeoul = la > 37.41 && la < 37.71 && ln > 126.76 && ln < 127.19;
-    state.origin = { key:'live', label:inSeoul ? t('현재 위치') : t('현재 위치 (서울 밖)'), lat:la, lng:ln, live:true };
-    state.geoMsg = inSeoul ? '' : t('서울 밖이라 반경 안에 결과가 없을 수 있어요. 거점을 골라 데모로 볼 수 있습니다.');
-    state.showLoc = !inSeoul;
-    state.selectedId = null;
-    state.keepScroll = true; render();
-  }, function(){
-    state.geoMsg = t('위치 권한이 없어요. 아래에서 거점을 골라주세요.');
-    state.keepScroll = true; render();
-  }, { timeout:8000, maximumAge:60000 });
-}
-
-function startAnalyze(){
-  state.screen = 'analyzing';
-  state.analyzeStep = 0;
-  render();
-  var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var gap = reduced ? 180 : 480;
-  var i = 1;
-  var timer = setInterval(function(){
-    state.analyzeStep = i;
-    if(state.screen !== 'analyzing'){ clearInterval(timer); return; }
-    render();
-    i++;
-    if(i > ANALYZE_STEP_KEYS.length){
-      clearInterval(timer);
-      setTimeout(function(){
-        if(state.screen !== 'analyzing') return;
-        saveProfile();
-        state.screen = 'result';
-        render();
-      }, reduced ? 150 : 420);
-    }
-  }, gap);
-}
+/* 온보딩 7문항은 여권 화면(passport.js)과 공유한다 */
+var onboarding = makeOnboarding({ render: render, done: 'result', home: 'intro', editBack: 'profile' });
 
 root.addEventListener('click', function(ev){
   var btn = ev.target.closest('[data-action]');
   if(!btn) return;
   var a = btn.getAttribute('data-action');
   var key = btn.getAttribute('data-key');
-  var p = state.profile;
+
+  if(onboarding.handle(a, key, btn)) return;
 
   switch(a){
-    case 'start':
-      state.profile = { natKey:null, natCustom:'', explore:null, atmosphere:null, spice:null,
-        allergens:[], customAllergens:[], noAllergy:false, vegan:[], veganNone:false, halal:false };
-      state.step = 0; state.natQuery = ''; state.algQuery = '';
-      state.showNatCustom = false; state.showAlgCustom = false;
-      state.screen = 'onboarding'; render(); break;
-
-    case 'resume':
-      var saved = loadSaved();
-      if(saved){ state.profile = saved; state.screen = 'result'; }
-      else state.screen = 'onboarding';
-      render(); break;
-
-    case 'nat':
-      p.natKey = key; p.natCustom = ''; state.showNatCustom = false;
-      state.keepScroll = true; render(); break;
-    case 'nat-clear':
-      p.natKey = null; p.natCustom = ''; state.keepScroll = true; render(); break;
-    case 'nat-custom-toggle':
-      state.showNatCustom = !state.showNatCustom;
-      state.focusAfter = state.showNatCustom ? 'natCustom' : null;
-      state.keepScroll = true; render(); break;
-    case 'nat-custom-add':
-      var nv = (document.getElementById('natCustom') || {}).value || '';
-      nv = nv.trim();
-      if(nv){ p.natKey = 'custom'; p.natCustom = nv; state.showNatCustom = false; state.natQuery = ''; }
-      state.keepScroll = true; render(); break;
-
-    case 'explore': p.explore = key; state.keepScroll = true; render(); break;
-    case 'atmos': p.atmosphere = key; state.keepScroll = true; render(); break;
-    case 'spice': p.spice = parseInt(key, 10); state.keepScroll = true; render(); break;
-
-    case 'alg':
-      p.noAllergy = false; toggleIn(p.allergens, key); state.keepScroll = true; render(); break;
-    case 'alg-none':
-      p.noAllergy = !p.noAllergy;
-      if(p.noAllergy){ p.allergens = []; p.customAllergens = []; }
-      state.keepScroll = true; render(); break;
-    case 'alg-custom-toggle':
-      state.showAlgCustom = !state.showAlgCustom;
-      state.focusAfter = state.showAlgCustom ? 'algCustom' : null;
-      state.keepScroll = true; render(); break;
-    case 'alg-custom-add':
-      var av = (document.getElementById('algCustom') || {}).value || '';
-      av = av.trim();
-      if(av && p.customAllergens.indexOf(av) < 0){ p.customAllergens.push(av); p.noAllergy = false; }
-      state.showAlgCustom = false; state.algQuery = '';
-      state.keepScroll = true; render(); break;
-    case 'alg-remove':
-      p.customAllergens.splice(parseInt(btn.getAttribute('data-idx'), 10), 1);
-      state.keepScroll = true; render(); break;
-
-    case 'vegan':
-      p.veganNone = false; toggleIn(p.vegan, key); state.keepScroll = true; render(); break;
-    case 'vegan-none':
-      p.veganNone = !p.veganNone;
-      if(p.veganNone) p.vegan = [];
-      state.keepScroll = true; render(); break;
-
-    case 'halal': p.halal = !p.halal; state.keepScroll = true; render(); break;
-
-    case 'prev':
-      if(state.step > 0) state.step--;
-      render(); break;
-    case 'next':
-      if(!stepValid()) return;
-      if(state.editing){ state.editing = false; saveProfile(); state.screen = 'profile'; render(); return; }
-      if(state.step < 6){ state.step++; render(); }
-      else startAnalyze();
-      break;
-    case 'cancel-edit':
-      state.editing = false; state.screen = 'profile'; render(); break;
-    case 'edit':
-      state.editing = true; state.step = parseInt(key, 10);
-      state.screen = 'onboarding'; render(); break;
-    case 'reset':
-      try{ localStorage.removeItem(STORE_KEY); }catch(e){}
-      state.previewCombo = null; state.screen = 'intro'; render(); break;
-
     case 'go':
       if(key === 'result' || key === 'places' || key === 'guide' || key === 'profile'){
         state.screen = key; render();
@@ -209,7 +86,7 @@ root.addEventListener('click', function(ev){
       state.showLoc = false; state.geoMsg = ''; state.selectedId = null;
       state.keepScroll = true; render(); break;
     case 'geo':
-      requestGeo(); break;
+      requestGeo(render); break;
     case 'radius':
       state.radiusKm = parseFloat(key); state.selectedId = null;
       state.keepScroll = true; render(); break;
@@ -265,31 +142,7 @@ root.addEventListener('click', function(ev){
   }
 });
 
-root.addEventListener('input', function(ev){
-  var el = ev.target;
-  if(el.id === 'natSearch'){
-    state.natQuery = el.value;
-    var box = document.getElementById('natChips');
-    if(box) box.innerHTML = natChipsHTML();
-  } else if(el.id === 'algSearch'){
-    state.algQuery = el.value;
-    var box2 = document.getElementById('algChips');
-    if(box2) box2.innerHTML = algChipsHTML();
-  }
-});
-
-root.addEventListener('keydown', function(ev){
-  if(ev.key !== 'Enter') return;
-  if(ev.target.id === 'natCustom'){
-    ev.preventDefault();
-    var b = root.querySelector('[data-action="nat-custom-add"]');
-    if(b) b.click();
-  } else if(ev.target.id === 'algCustom'){
-    ev.preventDefault();
-    var b2 = root.querySelector('[data-action="alg-custom-add"]');
-    if(b2) b2.click();
-  }
-});
+onboarding.attach(root);
 
 try{
   var savedLang = localStorage.getItem('tastematch.lang');

@@ -120,12 +120,34 @@ function waitForLeaflet(el, tries){
   if(tries > 14){ mapFallback(el); return; }
   setTimeout(function(){ waitForLeaflet(el, tries + 1); }, 400);
 }
+/* 다른 페이지(여권 등)가 자기 화면의 지도 그리는 법을 등록해 둔다 */
+var drawers = {};
+export function registerMapDrawer(screen, fn){ drawers[screen] = fn; }
+
 export function renderMaps(){
-  var el = document.getElementById('kmap-places') || document.getElementById('kmap-menu');
+  var el = document.getElementById('kmap-places')
+        || document.getElementById('kmap-menu')
+        || document.getElementById('kmap-one');
   if(!el) return;
   if(!leafletReady()){ waitForLeaflet(el, 0); return; }
-  if(state.screen === 'places') drawPlacesMap();
+  if(drawers[state.screen]) drawers[state.screen]();
+  else if(state.screen === 'places') drawPlacesMap();
   else if(state.screen === 'menu') drawMenuMap();
+}
+
+/* 한 곳만 크게 — 여권의 "오늘 도장 찍을 곳" 화면.
+   주황 원은 도장이 찍히는 반경이다. */
+export function drawOnePlaceMap(place, radiusM){
+  var el = document.getElementById('kmap-one');
+  if(!place || !el) return;
+  if(!leafletReady()){ waitForLeaflet(el, 0); return; }
+  var map = ensureMap(el);
+  var o = state.origin;
+  meMarker(o.lat, o.lng).addTo(mapLayer);
+  L.circle([place.lat, place.lng], { radius: radiusM || 300, color:'#FFA300',
+    weight:2, fillColor:'#FFA300', fillOpacity:.13 }).addTo(mapLayer);
+  L.marker([place.lat, place.lng], { icon: pinIcon('🍽 ' + esc(place.name), '#C8102E', true) }).addTo(mapLayer);
+  map.fitBounds([[o.lat, o.lng], [place.lat, place.lng]], { padding:[38, 38], maxZoom:16 });
 }
 
 /* 이 장소의 비짓서울 원본 데이터 — 화면에 보이는 값이 어디서 왔는지 그대로 보여줍니다 */

@@ -268,6 +268,7 @@ export function screenResult(){
           (rec.list.length ? esc(tpl('mapCount', { n:rec.list.length }))
                            : esc(t('내 주변 식당 찾으러 가기'))) + '</button>' +
         t('<button class="cta ghost" style="margin-top:8px" data-action="go" data-key="guide">9가지 유형 둘러보기</button>') +
+        t('<a class="cta ghost passport-link" style="margin-top:8px" href="passport.html">✦ 서울 미식 여권 열기</a>') +
       '</div>' +
     '</div>' + tabs('result') + '</div>';
 }
@@ -275,7 +276,7 @@ export function screenResult(){
 var RADII = [0.5, 1, 2, 5];
 
 /* 아직 비짓서울 API에서 장소를 모으는 중인가 */
-function poolStillLoading(){
+export function poolStillLoading(){
   return state.pool.status === 'loading' || state.pool.filling === true;
 }
 

@@ -1,0 +1,121 @@
+/* 서울 미식 여권 — style.css 위에 덧입히는 여권 껍데기
+   색은 기존 STO 팔레트를 그대로 쓰고, 질감만 여권처럼 바꾼다. */
+
+/* ---------- 표지 ---------- */
+.pcover .scroll{ background:var(--paper); }
+
+.book{
+  margin:14px 16px 0;
+  background:
+    radial-gradient(120% 90% at 50% 0%, #2E2A6E 0%, var(--panel) 60%),
+    var(--panel);
+  color:var(--on-panel);
+  border-radius:16px;
+  padding:20px 20px 16px;
+  box-shadow:var(--shadow-lift);
+  position:relative;
+  overflow:hidden;
+}
+.book::after{                       /* 여권 표지의 금박 테두리 */
+  content:''; position:absolute; inset:8px;
+  border:1px solid rgba(255,205,0,.35); border-radius:10px; pointer-events:none;
+}
+.book-top{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.book-top .crest{ color:var(--gold-bright); font-size:17px; line-height:1; }
+.book-top b{ font-family:var(--display); font-size:18px; font-weight:700; }
+.book-top .sub{ font-size:9.5px; letter-spacing:.22em; color:var(--gold-bright); margin-left:auto; }
+
+.book-photo{ display:flex; gap:14px; margin-top:16px; align-items:flex-start; }
+.photo{
+  flex:0 0 auto; width:96px; height:112px; border-radius:8px;
+  background:rgba(255,255,255,.07); border:1px solid rgba(255,205,0,.3);
+  display:grid; place-items:center; overflow:hidden;
+}
+.book-id{ flex:1; min-width:0; display:grid; grid-template-columns:1fr 1fr; gap:9px 10px; }
+.book-id .f span{ display:block; font-size:8.5px; letter-spacing:.12em; color:var(--on-panel-dim); }
+.book-id .f b{ display:block; font-size:13px; font-weight:700; margin-top:2px; line-height:1.3; word-break:keep-all; }
+
+.book-title{ margin-top:16px; border-top:1px solid rgba(255,205,0,.25); padding-top:13px; }
+.book-title b{ display:block; font-family:var(--display); font-size:20px; color:var(--gold-bright); }
+.book-title span{ display:block; font-size:11.5px; color:var(--on-panel-dim); margin-top:3px; }
+
+.pbar{ height:6px; border-radius:3px; background:rgba(255,255,255,.14); overflow:hidden; margin-top:14px; }
+.pbar i{ display:block; height:100%; background:var(--gold-bright); border-radius:3px; transition:width .5s ease; }
+.book-count{ font-size:12px; color:var(--on-panel-dim); margin-top:7px; }
+.book-count b{ font-size:16px; color:var(--gold-bright); }
+
+.mrz{
+  margin-top:16px; padding-top:11px; border-top:1px dashed rgba(255,255,255,.22);
+  font-family:var(--mono); font-size:10.5px; letter-spacing:.1em;
+  color:var(--on-panel-dim); word-break:break-all;
+}
+
+/* 표지 밖(본문)에서 쓰는 진행 막대는 밝은 바탕용 */
+.pad .pbar{ background:var(--line-soft); }
+.pad .pbar i{ background:var(--accent); }
+.pad .book-count{ color:var(--ink-3); }
+.pad .book-count b{ color:var(--red); }
+
+/* ---------- 오늘의 한 곳 ---------- */
+.today-head{ padding:18px 20px 14px; }
+.today-head h2{ font-size:26px; margin:7px 0 5px; }
+.today-facts{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.today-facts > div{ border:1px solid var(--line); background:var(--card); border-radius:13px; padding:11px 12px; }
+.today-facts span{ display:block; font-size:10px; color:var(--ink-3); letter-spacing:.03em; }
+.today-facts b{ display:block; font-size:17px; margin-top:4px; color:var(--ink); }
+
+.why{ font-size:13px; color:var(--ink-2); line-height:1.6; display:flex; gap:7px; margin-bottom:7px; }
+.why .b{ color:var(--red); flex:0 0 auto; }
+
+.gate{
+  margin:14px 0 12px; border-radius:13px; padding:13px 15px;
+  background:var(--line-soft); border:1px dashed var(--line);
+}
+.gate b{ display:block; font-size:13.5px; color:var(--ink-2); }
+.gate span{ display:block; font-size:12px; color:var(--ink-3); margin-top:4px; line-height:1.5; }
+.gate.ok{ background:var(--gold-wash); border:1px solid var(--gold-bright); }
+.gate.ok b{ color:var(--gold); }
+
+.stampbtn:not(:disabled){ box-shadow:0 6px 18px -8px rgba(255,163,0,.9); }
+
+/* ---------- 도장 ---------- */
+.stamp-svg{ display:block; }
+
+.stamped .scroll{ background:var(--paper); }
+.stamp-drop{ display:inline-block; animation:stampdrop .5s cubic-bezier(.2,1.5,.4,1) both; }
+@keyframes stampdrop{
+  0%{ transform:scale(2.4); opacity:0 }
+  60%{ transform:scale(.94); opacity:1 }
+  100%{ transform:scale(1); opacity:1 }
+}
+@media (prefers-reduced-motion: reduce){ .stamp-drop{ animation:none } }
+
+.done-card{
+  text-align:left; background:var(--card); border:1px solid var(--line);
+  border-radius:14px; padding:6px 15px; margin:18px 0 16px;
+}
+.title-win{
+  background:var(--gold-wash); border-radius:13px; padding:13px; margin-bottom:16px;
+}
+.title-win span{ display:block; font-size:10.5px; letter-spacing:.14em; color:var(--gold); font-weight:700; }
+.title-win b{ display:block; font-family:var(--display); font-size:21px; color:var(--ink); margin-top:4px; }
+
+/* ---------- 여권 펼치기 ---------- */
+.page-head{ padding:20px 20px 8px; }
+.page-head h2{ font-size:23px; margin:7px 0 0; }
+.title-chip{
+  display:inline-block; margin-top:10px; background:var(--panel); color:var(--gold-bright);
+  border-radius:999px; padding:5px 13px; font-size:12px; font-weight:700;
+}
+.stamp-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+.cell{
+  aspect-ratio:1/1; border:1px dashed var(--line); border-radius:14px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+  background:var(--card); padding:8px; text-align:center;
+}
+.cell.filled{ border-style:solid; border-color:var(--line-soft); background:var(--gold-wash); }
+.cell .slot{ font-family:var(--mono); font-size:19px; color:var(--line); }
+.cell .nm{ font-size:11px; font-weight:600; color:var(--ink-2); line-height:1.35; word-break:keep-all; }
+
+/* ---------- 하단 탭 ---------- */
+.pnav .tab{ font-size:12px; padding:12px 2px; }

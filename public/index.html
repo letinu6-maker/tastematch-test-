@@ -1277,6 +1277,7 @@
     "맛집":"Restaurant", "식당":"Restaurant", "한정식":"Korean set menu",
     "국수":"Noodles", "고기":"Grilled meat", "해산물":"Seafood", "서울":"Seoul",
     "이름 없음":"Unnamed",
+    "할랄 전용":"Halal only",
     "콘텐츠 ID (cid)":"Content ID (cid)", "분류":"Category", "주소":"Address",
     "가까운 역":"Nearest station", "전화":"Phone", "영업시간":"Opening hours",
     "휴무":"Closed", "할랄 표기":"Halal labelling", "채식 표기":"Vegetarian labelling", "태그":"Tags",
@@ -1307,6 +1308,7 @@
       fromOrigin: "{origin}에서",
       distWalk: "{dist} · 도보 {min}분",
       walkMin: "걸어서 {min}분",
+      spiceAria: "매운맛 {n}점",
       distReason: "현재 위치에서 {dist} · 걸어서 {min}분이에요",
       natReason: "{nat} 여행자의 {kind} 선호도 {score}점이에요",
       spiceExact: "매운맛 {v}/10(추정) — 설정한 수준과 일치해요",
@@ -1336,6 +1338,7 @@
       fromOrigin: "From {origin}",
       distWalk: "{dist} · {min} min walk",
       walkMin: "{min} min walk",
+      spiceAria: "Spice level {n}",
       distReason: "{dist} from you · about {min} minutes on foot",
       natReason: "{kind} scores {score} with travellers from {nat}",
       spiceExact: "Spice {v}/10 (est.) — exactly your level",
@@ -1374,13 +1377,16 @@
   function t(str){
     if(str == null || typeof state === 'undefined' || !state || state.lang !== 'en') return str;
     var s = String(str);
-    if(s.indexOf('<') < 0) return trSeg(s);
-    return s.replace(/(<[^>]*>)|([^<]+)/g, function(m, tag, text){
-      if(tag){
-        return tag.replace(/(placeholder|aria-label|title)="([^"]*)"/g, function(mm, attr, val){
-          return attr + '="' + trSeg(val) + '"';
-        });
-      }
+    /* 속성값은 태그가 잘려 있어도 먼저 번역 */
+    s = s.replace(/(placeholder|aria-label|title)="([^"]*)"/g, function(mm, attr, val){
+      return attr + '="' + trSeg(val) + '"';
+    });
+    if(s.indexOf('<') < 0 && s.indexOf('>') < 0) return trSeg(s);
+    return s.replace(/(<[^>]*>?)|([^<]+)/g, function(m, tag, text){
+      if(tag) return tag;
+      /* 문자열이 태그 중간에서 시작하면, 마지막 '>' 뒤쪽만 번역 */
+      var gt = text.lastIndexOf('>');
+      if(gt >= 0) return text.slice(0, gt + 1) + trSeg(text.slice(gt + 1));
       return trSeg(text);
     });
   }
@@ -1649,7 +1655,7 @@
     ['adventure','trend','proven'].forEach(function(ex){
       ['quiet','either','trendy'].forEach(function(vb){
         cells += '<div class="char-cell">' + character(ex, vb, 40) +
-                 '<span>' + esc(PERSONAS[ex + '-' + vb].title) + '</span></div>';
+                 '<span>' + esc(t(PERSONAS[ex + '-' + vb].title)) + '</span></div>';
       });
     });
     var saved = loadSaved();
@@ -1674,7 +1680,7 @@
   }
 
   var STEPS = [
-    { title:t('국적이 어떻게 되세요?'), note:t('국적별 메뉴 선호 통계를 추천 점수의 30%로 반영합니다.') },
+    { title:t('국적이 어떻게 되세요?'), note:t('국적별 메뉴 선호 통계를 추천 점수의 28%로 반영합니다.') },
     { title:t('새로운 메뉴, 어떻게 고르세요?'), note:t('미식가 유형을 결정하는 첫 번째 축입니다.') },
     { title:t('식당 분위기는 어떤 쪽이 좋아요?'), note:t('미식가 유형을 결정하는 두 번째 축입니다.') },
     { title:t('매운맛, 어디까지 괜찮으세요?'), note:t('한국 음식은 같은 이름이어도 매운 정도가 크게 다릅니다.') },
@@ -1759,13 +1765,13 @@
       for(var i=1;i<=10;i++){
         var on = p.spice !== null && i <= p.spice;
         var peak = p.spice === i;
-        pep += '<button class="pepper ' + (on ? 'on' : '') + ' ' + (peak ? 'peak' : '') + '" data-action="spice" data-key="' + i + t('" aria-label="매운맛 ') + i + t('점">🌶️</button>');
+        pep += '<button class="pepper ' + (on ? 'on' : '') + ' ' + (peak ? 'peak' : '') + '" data-action="spice" data-key="' + i + '" aria-label="' + esc(tpl('spiceAria', { n:i })) + '">🌶️</button>';
       }
       body = t('<div class="spice-head"><span class="muted">1 = 순한맛 · 10 = 불닭</span>') +
              '<span class="spice-val">' + (p.spice === null ? '—' : p.spice + '/10') + '</span></div>' +
              '<div class="pepper-row">' + pep + '</div>' +
              t('<div class="scale-ends"><span>김치도 매워요</span><span>불닭 완주 가능</span></div>') +
-             (p.spice !== null ? '<div class="spice-note">' + esc(spiceNote(p.spice)) + '</div>' : '');
+             (p.spice !== null ? '<div class="spice-note">' + esc(t(spiceNote(p.spice))) + '</div>' : '');
     } else if(s === 4){
       body = '<div class="search-row">' + ICON.search +
              t('<input type="text" id="algSearch" placeholder="재료 검색 (예: 갑각류, 글루텐)" value="') + esc(state.algQuery) + '" autocomplete="off"></div>' +
@@ -1795,7 +1801,7 @@
       '<div class="rail">' + rail + '</div>' +
       '<div class="scroll">' +
         '<div class="q-head"><div class="step">STEP ' + (state.step + 1) + ' / 7</div>' +
-        '<h2>' + esc(def.title) + '</h2><p>' + esc(def.note) + '</p></div>' +
+        '<h2>' + esc(t(def.title)) + '</h2><p>' + esc(t(def.note)) + '</p></div>' +
         '<div class="q-body">' + body + '</div>' +
       '</div>' +
       '<div class="nav-bar">' +
@@ -1864,7 +1870,7 @@
           '<div class="kicker">' + (state.previewCombo ? t('다른 유형 미리보기') : t('당신의 미식가 유형')) + '</div>' +
           '<h1>' + esc(t(per.title)) + '</h1>' +
           '<p class="tag">' + esc(t(per.tag)) + '</p>' +
-          '<div class="axis-pair"><span class="axis-pill">' + esc(exShort) + '</span><span class="axis-pill">' + esc(atShort) + '</span></div>' +
+          '<div class="axis-pair"><span class="axis-pill">' + esc(t(exShort)) + '</span><span class="axis-pill">' + esc(t(atShort)) + '</span></div>' +
         '</div>' +
         '<div class="sect"><p class="body-copy">' + esc(t(per.body)) + '</p>' +
           '<div class="kw-row" style="margin-top:14px">' + per.kw.map(function(k){ return '<span class="kw">' + esc(t(k)) + '</span>'; }).join('') + '</div>' +
@@ -1873,12 +1879,12 @@
           '<div class="stat-3">' +
             t('<div class="stat"><div class="k">국적</div><div class="v">') + esc(natLabel(p)) + '</div></div>' +
             t('<div class="stat"><div class="k">매운맛</div><div class="v num">') + p.spice + '/10</div></div>' +
-            t('<div class="stat"><div class="k">분위기</div><div class="v">') + esc(atShort) + '</div></div>' +
+            t('<div class="stat"><div class="k">분위기</div><div class="v">') + esc(t(atShort)) + '</div></div>' +
           '</div>' +
           '<div class="cohort" style="margin-top:12px"><span class="big">' + pct + '%</span>' +
           '<p>' + esc(tpl('cohort', { nat:natLabel(p) })) + '</p></div>' +
         '</div>' +
-        '<div class="sect"><h3 class="sect-title">' + esc(state.origin.label) + t(' 주변 상위 추천</h3>') + preview +
+        '<div class="sect"><h3 class="sect-title">' + esc(t(state.origin.label)) + t(' 주변 상위 추천</h3>') + preview +
           '<button class="cta" style="margin-top:12px" data-action="go" data-key="places">' +
             esc(tpl('mapCount', { n:rec.list.length })) + '</button>' +
           t('<button class="cta ghost" style="margin-top:8px" data-action="go" data-key="guide">9가지 유형 둘러보기</button>') +
@@ -2078,8 +2084,8 @@
       '<div class="sect"><p class="body-copy">' + esc(t(per.body)) + '</p>' +
         '<div class="kw-row" style="margin-top:14px">' + per.kw.map(function(k){ return '<span class="kw">' + esc(t(k)) + '</span>'; }).join('') + '</div></div>' +
       t('<div class="sect"><h3 class="sect-title">이 유형의 기준</h3>') +
-        t('<div class="kv"><span class="k">메뉴 선택</span><span class="v">') + esc(exShort.label) + '</span></div>' +
-        t('<div class="kv"><span class="k">식당 분위기</span><span class="v">') + esc(atShort.label) + '</span></div></div>' +
+        t('<div class="kv"><span class="k">메뉴 선택</span><span class="v">') + esc(t(exShort.label)) + '</span></div>' +
+        t('<div class="kv"><span class="k">식당 분위기</span><span class="v">') + esc(t(atShort.label)) + '</span></div></div>' +
       '<div class="sect">' +
         (isMine
           ? t('<button class="cta" data-action="go" data-key="places">내 추천 맛집 보기</button>')

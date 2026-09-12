@@ -302,6 +302,11 @@
   .offlist{ border-top:1px solid var(--line-soft); margin-bottom:10px; }
   .offrow{ display:flex; justify-content:space-between; gap:12px; padding:8px 0; border-bottom:1px solid var(--line-soft); font-size:12px; color:var(--ink-3); }
   .offrow .r{ flex:0 0 auto; text-align:right; }
+  .langbar{ display:inline-flex; gap:4px; background:var(--line-soft); border-radius:999px; padding:3px; }
+  .langbtn{ border:0; background:transparent; font-family:inherit; font-size:11.5px; font-weight:700;
+    color:var(--ink-3); padding:5px 11px; border-radius:999px; cursor:pointer; }
+  .langbtn.on{ background:var(--card); color:var(--ink); box-shadow:0 1px 3px rgba(0,0,0,.12); }
+  .langrow{ display:flex; justify-content:flex-end; padding:10px 16px 0; }
   .empty-state{ font-size:13px; line-height:1.7; color:var(--ink-2); background:var(--gold-wash); border-radius:13px; padding:14px 15px; margin-bottom:10px; }
 
   .filter-summary{ display:flex; flex-wrap:wrap; gap:6px; }
@@ -468,7 +473,7 @@
   /* 실제 API 응답에서 확인된 음식 카테고리 코드(음식 > 한식) */
   var FOOD_CATEGORY_SEEDS = ['Cz9d1h6'];
   var FOOD_KEYWORDS = ['한식', '맛집', '식당', '한정식', '국수', '고기', '해산물', '카페'];
-  var POOL_CACHE_KEY = 'tastematch.pool.v1';
+  var POOL_CACHE_KEY = 'tastematch.pool.v2';
   var POOL_MAX = 48;
 
   /* --- 외부 데이터 ① 국적별 음식 종류 선호 경향 (자체 큐레이션 지표) --- */
@@ -494,31 +499,31 @@
 
   /* --- 외부 데이터 ② 메뉴명·태그 기반 매운맛 추정 규칙 --- */
   var SPICE_RULES = [
-    { re:/불닭|핵매운|아주\s*매운|엽기/, v:10 },
-    { re:/낙지볶음|쭈꾸미|짬뽕|불족발|매운\s*갈비|아구찜|해물찜|닭발|불막창/, v:8 },
-    { re:/떡볶이|닭갈비|김치찌개|순두부|부대찌개|매운|칼칼|얼큰/, v:7 },
-    { re:/제육|비빔|낙지|고추장|감자탕|해장국/, v:5 },
-    { re:/김치|된장|청국장|찌개|전골|탕\b/, v:4 },
-    { re:/삼겹|구이|갈비|불고기|치킨|족발|보쌈|전\b|튀김|고기/, v:3 },
-    { re:/설렁탕|곰탕|삼계탕|백반|한정식|국밥|죽\b|수제비|칼국수|콩국수|냉면|만두|김밥|초밥/, v:1 },
-    { re:/카페|커피|디저트|베이커리|빵|케이크|빙수|티\b|차\b/, v:0 }
+    { re:/불닭|핵매운|아주\s*매운|엽기|buldak|fire\s*chicken/i, v:10 },
+    { re:/낙지볶음|쭈꾸미|짬뽕|불족발|매운\s*갈비|아구찜|해물찜|닭발|불막창|jjamppong|spicy\s*stir/i, v:8 },
+    { re:/떡볶이|닭갈비|김치찌개|순두부|부대찌개|매운|칼칼|얼큰|tteokbokki|dakgalbi|kimchi\s*stew|sundubu|spicy/i, v:7 },
+    { re:/제육|비빔|낙지|고추장|감자탕|해장국|bibim|gochujang|jeyuk/i, v:5 },
+    { re:/김치|된장|청국장|찌개|전골|탕\b|kimchi|doenjang|jjigae|stew/i, v:4 },
+    { re:/삼겹|구이|갈비|불고기|치킨|족발|보쌈|전\b|튀김|고기|samgyeop|galbi|bulgogi|chicken|grill|jokbal|bossam|fried/i, v:3 },
+    { re:/설렁탕|곰탕|삼계탕|백반|한정식|국밥|죽\b|수제비|칼국수|콩국수|냉면|만두|김밥|초밥|seolleongtang|samgyetang|gukbap|kalguksu|naengmyeon|mandu|gimbap|sushi|porridge|noodle/i, v:1 },
+    { re:/카페|커피|디저트|베이커리|빵|케이크|빙수|티\b|차\b|cafe|coffee|dessert|bakery|cake|bingsu|tea\b/i, v:0 }
   ];
 
   /* --- 외부 데이터 ③ 메뉴명 기반 알레르기 유발 성분 추정 규칙 --- */
   var ALLERGEN_RULES = [
-    { key:'shellfish', re:/새우|게장|꽃게|랍스터|대게|갑각/ },
-    { key:'mollusk',   re:/오징어|낙지|문어|조개|굴\b|전복|골뱅이|홍합|쭈꾸미/ },
-    { key:'fish',      re:/생선|고등어|갈치|굴비|회\b|초밥|참치|멸치|장어|아구/ },
-    { key:'pork',      re:/돼지|삼겹|목살|제육|족발|보쌈|순대|돈까스|돈가스/ },
-    { key:'beef',      re:/소고기|한우|갈비|불고기|육회|곰탕|설렁탕|차돌/ },
-    { key:'dairy',     re:/치즈|우유|크림|버터|라떼|요거트/ },
-    { key:'egg',       re:/계란|달걀|에그|오믈렛/ },
-    { key:'gluten',    re:/국수|면\b|칼국수|라면|빵|만두|튀김|파스타|우동|김밥|떡볶이|수제비|돈까스/ },
-    { key:'buckwheat', re:/메밀|막국수/ },
-    { key:'nuts',      re:/견과|아몬드|호두|잣\b/ },
-    { key:'peanut',    re:/땅콩/ },
-    { key:'soy',       re:/두부|된장|간장|콩\b|순두부|청국장/ },
-    { key:'sesame',    re:/참깨|참기름|들깨|깨\b/ }
+    { key:'shellfish', re:/새우|게장|꽃게|랍스터|대게|갑각|shrimp|crab|lobster|prawn/i },
+    { key:'mollusk',   re:/오징어|낙지|문어|조개|굴\b|전복|골뱅이|홍합|쭈꾸미|squid|octopus|clam|oyster|abalone|mussel/i },
+    { key:'fish',      re:/생선|고등어|갈치|굴비|회\b|초밥|참치|멸치|장어|아구|fish|mackerel|tuna|anchovy|eel|sashimi|sushi/i },
+    { key:'pork',      re:/돼지|삼겹|목살|제육|족발|보쌈|순대|돈까스|돈가스|pork|samgyeop|jokbal|bossam|sundae/i },
+    { key:'beef',      re:/소고기|한우|갈비|불고기|육회|곰탕|설렁탕|차돌|beef|hanwoo|galbi|bulgogi|yukhoe/i },
+    { key:'dairy',     re:/치즈|우유|크림|버터|라떼|요거트|cheese|milk|cream|butter|latte|yogurt/i },
+    { key:'egg',       re:/계란|달걀|에그|오믈렛|egg|omelet/i },
+    { key:'gluten',    re:/국수|면\b|칼국수|라면|빵|만두|튀김|파스타|우동|김밥|떡볶이|수제비|돈까스|noodle|bread|dumpling|pasta|udon|gimbap|tteokbokki|fried/i },
+    { key:'buckwheat', re:/메밀|막국수|buckwheat|makguksu/i },
+    { key:'nuts',      re:/견과|아몬드|호두|잣\b|nut|almond|walnut|pine\s*nut/i },
+    { key:'peanut',    re:/땅콩|peanut/i },
+    { key:'soy',       re:/두부|된장|간장|콩\b|순두부|청국장|tofu|doenjang|soy|bean/i },
+    { key:'sesame',    re:/참깨|참기름|들깨|깨\b|sesame|perilla/i }
   ];
 
   function textOfInfo(info){
@@ -537,30 +542,31 @@
     return out;
   }
   function inferVibe(txt){
-    if(/오래가게|노포|골목|3대|원조|백반|전통/.test(txt)) return 'local';
-    if(/핫플|인스타|루프탑|브런치|팝업|디저트|카페|신상|트렌드/.test(txt)) return 'trendy';
+    if(/오래가게|노포|골목|3대|원조|백반|전통|old\s*shop|alley|traditional|since\s*19/i.test(txt)) return 'local';
+    if(/핫플|인스타|루프탑|브런치|팝업|디저트|카페|신상|트렌드|rooftop|brunch|pop-?up|dessert|cafe|trendy/i.test(txt)) return 'trendy';
     return 'mixed';
   }
   function inferNovelty(txt){
-    if(/사찰|보양|전통주|한정식|육회|산낙지|과메기|홍어|곱창|막창|선지|순대|추어|보리굴비/.test(txt)) return 'exotic';
-    if(/치킨|카페|빵|피자|파스타|햄버거|김밥|비빔밥|불고기|만두|커피/.test(txt)) return 'familiar';
+    if(/사찰|보양|전통주|한정식|육회|산낙지|과메기|홍어|곱창|막창|선지|순대|추어|보리굴비|temple|raw\s*beef|intestine|skate|offal/i.test(txt)) return 'exotic';
+    if(/치킨|카페|빵|피자|파스타|햄버거|김밥|비빔밥|불고기|만두|커피|chicken|cafe|bread|pizza|pasta|burger|gimbap|bibimbap|bulgogi|dumpling|coffee/i.test(txt)) return 'familiar';
     return 'mid';
   }
   function cuisineKind(info, txt){
     var r = info.restaurant || {};
     var kinds = (r.kind || []).map(function(k){ return k.code_nm || ''; }).join(' ');
     var all = kinds + ' ' + (info.cate_depth || '');
-    if(/중식/.test(all)) return '중식';
-    if(/일식/.test(all)) return '일식';
-    if(/양식|서양|이탈|프렌치/.test(all)) return '양식';
-    if(/카페|디저트|베이커리/.test(all) || /카페|커피|베이커리|디저트/.test(txt)) return '카페';
-    if(/분식/.test(all) || /떡볶이|김밥|분식/.test(txt)) return '분식';
-    if(/한식/.test(all)) return '한식';
+    if(/중식|chinese/i.test(all)) return '중식';
+    if(/일식|japanese|sushi/i.test(all)) return '일식';
+    if(/양식|서양|이탈|프렌치|western|italian|french/i.test(all)) return '양식';
+    if(/카페|디저트|베이커리|cafe|dessert|bakery|coffee/i.test(all) ||
+       /카페|커피|베이커리|디저트|cafe|coffee|bakery|dessert/i.test(txt)) return '카페';
+    if(/분식|snack|street\s*food/i.test(all) || /떡볶이|김밥|분식|tteokbokki|gimbap/i.test(txt)) return '분식';
+    if(/한식|korean/i.test(all)) return '한식';
     return '기타';
   }
   function guFromAddress(addr){
     var m = /(\S+구)\s/.exec(addr || '');
-    return m ? m[1] : '서울';
+    return m ? m[1] : t('서울');
   }
 
   /* 비짓서울 contents/info 응답 → 앱 내부 장소 객체 */
@@ -584,8 +590,8 @@
     return {
       id: info.cid,
       cid: info.cid,
-      name: info.post_sj || '이름 없음',
-      place: (tr.subway_info || addr || '서울').split(',')[0],
+      name: info.post_sj || t('이름 없음'),
+      place: (tr.subway_info || addr || t('서울')).split(',')[0],
       gu: guFromAddress(addr),
       addr: addr,
       kind: kind,
@@ -598,7 +604,7 @@
       dietaryLabels: dietary,
       halal: halal,
       halalLabels: halalCodes,
-      blurb: info.sumry || '비짓서울 API에 등록된 장소입니다.',
+      blurb: info.sumry || t('비짓서울 API에 등록된 장소입니다.'),
       tip: r.fd_reprsnt_menu || '',
       tel: (info.extra && info.extra.cmmn_telno) || '',
       hours: (info.extra && info.extra.cmmn_use_time) || '',
@@ -613,7 +619,7 @@
   /* ---- 비짓서울 API에서 실제 장소 풀을 채워 넣기 ---- */
   function readPoolCache(){
     try{
-      var raw = localStorage.getItem(POOL_CACHE_KEY);
+      var raw = localStorage.getItem(POOL_CACHE_KEY + '.' + state.lang);
       if(!raw) return null;
       var o = JSON.parse(raw);
       if(!o || !o.at || !o.places || !o.places.length) return null;
@@ -622,7 +628,7 @@
     }catch(e){ return null; }
   }
   function writePoolCache(places){
-    try{ localStorage.setItem(POOL_CACHE_KEY, JSON.stringify({ at:Date.now(), places:places })); }catch(e){}
+    try{ localStorage.setItem(POOL_CACHE_KEY + '.' + state.lang, JSON.stringify({ at:Date.now(), places:places })); }catch(e){}
   }
 
   function collectFoodCategoryCodes(catJson){
@@ -684,11 +690,11 @@
       codes.forEach(function(code){
         [1, 2].forEach(function(pageNo){
           listCalls.push(fetchJson('/api/contents?' + new URLSearchParams({
-            com_ctgry_sn:code, lang_code_id:'ko', page_no:pageNo })));
+            com_ctgry_sn:code, lang_code_id:apiLang(), page_no:pageNo })));
         });
       });
       FOOD_KEYWORDS.forEach(function(kw){
-        listCalls.push(fetchJson('/api/contents?' + new URLSearchParams({ keyword:kw, lang_code_id:'ko' })));
+        listCalls.push(fetchJson('/api/contents?' + new URLSearchParams({ keyword:kw, lang_code_id:apiLang() })));
       });
 
       return Promise.all(listCalls);
@@ -702,7 +708,7 @@
       cids = cids.slice(0, POOL_MAX);
       if(!cids.length){
         state.pool.status = 'error';
-        state.pool.error = '비짓서울 API에서 음식 콘텐츠를 찾지 못했어요.';
+        state.pool.error = t('비짓서울 API에서 음식 콘텐츠를 찾지 못했어요.');
         render();
         return;
       }
@@ -716,7 +722,7 @@
           var nextCid = cids[idx];
           idx++; active++;
           (function(cid){
-            fetchJson('/api/contents/' + encodeURIComponent(cid)).then(function(d){
+            fetchJson('/api/contents/' + encodeURIComponent(cid) + '?lang_code_id=' + apiLang()).then(function(d){
               var info = d && d.ok && d.data && d.data.data;
               var place = placeFromInfo(info);
               if(place) PLACES.push(place);
@@ -726,7 +732,7 @@
               if(finished % 4 === 0 || finished === cids.length){ state.keepScroll = true; render(); }
               if(finished === cids.length){
                 state.pool.status = PLACES.length ? 'ready' : 'error';
-                if(!PLACES.length) state.pool.error = '좌표가 있는 음식 콘텐츠를 찾지 못했어요.';
+                if(!PLACES.length) state.pool.error = t('좌표가 있는 음식 콘텐츠를 찾지 못했어요.');
                 if(PLACES.length) writePoolCache(PLACES);
                 state.keepScroll = true; render();
               } else {
@@ -815,7 +821,7 @@
     var i, hit = [];
     if(!p.noAllergy){
       for(i=0;i<p.allergens.length;i++){
-        if(place.allergens.indexOf(p.allergens[i]) >= 0) hit.push(ALLERGEN_LABEL[p.allergens[i]]);
+        if(place.allergens.indexOf(p.allergens[i]) >= 0) hit.push(t(ALLERGEN_LABEL[p.allergens[i]]));
       }
       for(i=0;i<p.customAllergens.length;i++){
         var t = p.customAllergens[i];
@@ -823,9 +829,9 @@
            place.cat.indexOf(t) >= 0 || (place.tip || '').indexOf(t) >= 0) hit.push(t);
       }
     }
-    if(hit.length) return '알레르기 추정 · ' + hit.join(', ');
-    if(!p.veganNone && p.vegan.length && !place.veganOk.length) return '채식 정보 없음';
-    if(p.halal && !place.halal) return '할랄 정보 없음';
+    if(hit.length) return tpl('blockedAllergy', { list:hit.join(', ') });
+    if(!p.veganNone && p.vegan.length && !place.veganOk.length) return t('채식 정보 없음');
+    if(p.halal && !place.halal) return t('할랄 정보 없음');
     return null;
   }
 
@@ -845,20 +851,20 @@
   }
 
   function reasonFor(key, place, p, parts, km){
-    if(key === 'dist') return '현재 위치에서 ' + fmtDist(km) + ' · 걸어서 ' + walkMin(km) + '분이에요';
-    if(key === 'nat') return natLabel(p) + ' 여행자의 ' + place.kind + ' 선호도 ' + parts.nat + '점이에요';
+    if(key === 'dist') return tpl('distReason', { dist:fmtDist(km), min:walkMin(km) });
+    if(key === 'nat') return tpl('natReason', { nat:natLabel(p), kind:t(place.kind), score:parts.nat });
     if(key === 'spice'){
       var d = Math.abs(place.spice - p.spice);
-      if(d === 0) return '매운맛 ' + place.spice + '/10(추정) — 설정한 수준과 일치해요';
-      if(d <= 2) return '매운맛 ' + place.spice + '/10(추정) — 감당 가능한 범위예요';
-      return '매운맛 ' + place.spice + '/10(추정)';
+      if(d === 0) return tpl('spiceExact', { v:place.spice });
+      if(d <= 2) return tpl('spiceNear', { v:place.spice });
+      return tpl('spicePlain', { v:place.spice });
     }
     if(key === 'explore'){
-      if(p.explore === 'adventure') return NOVELTY_LABEL[place.novelty] + ' — 도전을 즐기는 성향과 맞아요';
-      if(p.explore === 'trend') return (VIBE_LABEL[place.vibe] || '중간') + ' 분위기로 분류됐어요';
-      return '무난하게 고르기 좋은 유형이에요';
+      if(p.explore === 'adventure') return tpl('exploreAdv', { novelty:t(NOVELTY_LABEL[place.novelty]) });
+      if(p.explore === 'trend') return tpl('exploreTrend', { vibe:t(VIBE_LABEL[place.vibe]) || t('중간') });
+      return tpl('exploreProven', {});
     }
-    return (VIBE_LABEL[place.vibe] || '중간') + ' 분위기 — 선호와 맞아요';
+    return tpl('vibeReason', { vibe:t(VIBE_LABEL[place.vibe]) || t('중간') });
   }
 
   function topReasons(entry, p, n){
@@ -975,7 +981,7 @@
     if(!document.body.contains(el)) return;
     el.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;' +
       'color:var(--ink-3);font-size:12px;text-align:center;padding:0 16px;line-height:1.5">' +
-      '지도를 불러오지 못했어요.<br>잠시 후 다시 열어보세요.</div>';
+      t('지도를 불러오지 못했어요.<br>잠시 후 다시 열어보세요.') + '</div>';
   }
   function waitForLeaflet(el, tries){
     if(leafletReady()){ renderMaps(); return; }
@@ -997,28 +1003,412 @@
       return '<div class="kv"><span class="k">' + esc(k) + '</span><span class="v">' + esc(String(v)) + '</span></div>';
     }
     var rows = '';
-    rows += row('콘텐츠 ID (cid)', m.cid);
-    rows += row('분류', m.cat);
-    rows += row('주소', m.addr);
-    rows += row('가까운 역', m.subway);
-    rows += row('전화', m.tel);
-    rows += row('영업시간', (m.hours || '').split(/[\r\n]/)[0]);
-    rows += row('휴무', m.closed);
-    rows += row('대표 메뉴', m.tip);
-    if(m.halalLabels && m.halalLabels.length) rows += row('할랄 표기', m.halalLabels.join(', '));
-    if(m.dietaryLabels && m.dietaryLabels.length) rows += row('채식 표기', m.dietaryLabels.join(', '));
-    if(m.tags && m.tags.length) rows += row('태그', m.tags.join(', '));
+    rows += row(t('콘텐츠 ID (cid)'), m.cid);
+    rows += row(t('분류'), t(m.cat));
+    rows += row(t('주소'), m.addr);
+    rows += row(t('가까운 역'), m.subway);
+    rows += row(t('전화'), m.tel);
+    rows += row(t('영업시간'), (m.hours || '').split(/[\r\n]/)[0]);
+    rows += row(t('휴무'), m.closed);
+    rows += row(t('대표 메뉴'), m.tip);
+    if(m.halalLabels && m.halalLabels.length) rows += row(t('할랄 표기'), m.halalLabels.join(', '));
+    if(m.dietaryLabels && m.dietaryLabels.length) rows += row(t('채식 표기'), m.dietaryLabels.join(', '));
+    if(m.tags && m.tags.length) rows += row(t('태그'), m.tags.join(', '));
 
     var live = state.rawCache[m.cid];
     var note = '';
-    if(live && live.loading) note = '<p class="muted" style="margin-top:8px">비짓서울 API를 호출하는 중…</p>';
-    else if(live && live.ok) note = '<p class="fine" style="margin-top:8px">✅ ' + esc(live.at) + '에 다시 불러왔어요 — ' + esc(live.name) + '</p>';
-    else if(live) note = '<p class="muted" style="margin-top:8px">⚠️ ' + esc(live.message || '호출에 실패했어요') + '</p>';
+    if(live && live.loading) note = '<p class="muted" style="margin-top:8px">' + t('비짓서울 API를 호출하는 중…') + '</p>';
+    else if(live && live.ok) note = '<p class="fine" style="margin-top:8px">' + esc(tpl('reloadedAt', { at:live.at, name:live.name })) + '</p>';
+    else if(live) note = '<p class="muted" style="margin-top:8px">⚠️ ' + esc(live.message || t('호출에 실패했어요')) + '</p>';
 
     return rows +
-      '<button class="cta ghost" style="margin-top:10px" data-action="reload-raw" data-key="' + esc(m.cid) + '">🔄 지금 비짓서울 API에서 다시 불러오기</button>' +
+      '<button class="cta ghost" style="margin-top:10px" data-action="reload-raw" data-key="' + esc(m.cid) + '">' + t('🔄 지금 비짓서울 API에서 다시 불러오기') + '</button>' +
       note +
-      '<p class="fine" style="margin-top:8px">이 화면의 이름·주소·좌표·영업정보는 모두 비짓서울 API 콘텐츠 상세(contents/info) 응답에서 그대로 가져온 값입니다.</p>';
+      '<p class="fine" style="margin-top:8px">' + t('이 화면의 이름·주소·좌표·영업정보는 모두 비짓서울 API 콘텐츠 상세(contents/info) 응답에서 그대로 가져온 값입니다.') + '</p>';
+  }
+
+  /* ============================================================
+     다국어 — UI는 한국어·영어, 콘텐츠는 비짓서울 API의 언어별 응답 사용
+     ============================================================ */
+
+  var LANGS = [
+    { key:"ko", label:"한국어", api:"ko" },
+    { key:"en", label:"English", api:"en" }
+  ];
+
+  var I18N_EN = {
+    "추천 시작하기":"Start",
+    "시작하기 · 7문항":"Start · 7 questions",
+    "저장된 프로필로 계속하기":"Continue with saved profile",
+    "당신의 한 입을 찾습니다":"Find your next bite in Seoul",
+    "국적별 선호 데이터와 당신의 입맛, 지금 있는 자리에서의 거리를 겹쳐":"We combine preference data for your nationality, your own taste settings and how far you are willing to walk to pick",
+    "지금 걸어갈 수 있는":"a meal you can walk to right now",
+    "한 끼를 고릅니다. 알레르기·채식·할랄 조건은 추천에서 자동으로 걸러냅니다.":". Allergy, vegetarian and halal conditions are filtered out automatically.",
+    "샘플 데이터로 동작하는 프로토타입입니다. 실제 서비스에서는 비짓서울 API의 음식 콘텐츠와 실시간 SNS 지표를 연결합니다.":"Every place shown is live content from the VisitSeoul Open API. Spice level and allergens are estimated from the venue name and signature menu.",
+    "비짓서울 API":"VisitSeoul API",
+    "국적별 선호 데이터":"Nationality preference data",
+    "반경 기반 주변 추천":"Radius-based nearby search",
+    "비짓서울 음식 콘텐츠":"VisitSeoul food content",
+
+    "국적이 어떻게 되세요?":"Where are you visiting from?",
+    "국적별 메뉴 선호 통계를 추천 점수의 28%로 반영합니다.":"Nationality-based preference data accounts for 28% of the match score.",
+    "새로운 메뉴, 어떻게 고르세요?":"How do you pick something new?",
+    "미식가 유형을 결정하는 첫 번째 축입니다.":"This is the first axis of your taste persona.",
+    "식당 분위기는 어떤 쪽이 좋아요?":"What kind of place do you prefer?",
+    "미식가 유형을 결정하는 두 번째 축입니다.":"This is the second axis of your taste persona.",
+    "매운맛, 어디까지 괜찮으세요?":"How much heat can you take?",
+    "한국 음식은 같은 이름이어도 매운 정도가 크게 다릅니다.":"Korean dishes with the same name can vary a lot in spiciness.",
+    "알레르기나 못 먹는 재료가 있나요?":"Any allergies or ingredients to avoid?",
+    "선택한 재료가 들어간 메뉴는 추천에서 완전히 제외됩니다.":"Anything containing what you select is removed from your recommendations.",
+    "채식 유형이 있나요?":"Do you follow a vegetarian diet?",
+    "해당하는 유형을 만족하는 메뉴만 남깁니다.":"Only places matching your diet are kept.",
+    "할랄 인증이 필요하세요?":"Do you need halal food?",
+    "할랄 인증이 확인된 메뉴만 추천합니다.":"Only places with halal information are recommended.",
+    "할랄 인증 또는 성분이 확인된 메뉴만 추천합니다.":"Only places with halal information from the API are recommended.",
+
+    "방한 관광객 수가 많은 국가 순으로 정렬했습니다. 목록에 없으면 직접 입력해 주세요.":"Sorted by visitor numbers to Korea. If your country is not listed, type it in.",
+    "국가 검색 (예: 캐나다, 태국)":"Search countries (e.g. Canada, Thailand)",
+    "재료 검색 (예: 갑각류, 글루텐)":"Search ingredients (e.g. shellfish, gluten)",
+    "예: 브라질, 스페인":"e.g. Brazil, Spain",
+    "예: 참외, 키위":"e.g. melon, kiwi",
+    "검색 결과가 없어요. 아래":"No results.",
+    "으로 추가해 주세요.":"Use the button below to add it.",
+    "목록에 없네요.":"Not in the list?",
+    "직접 입력":"Type it in",
+    "+ 직접 입력":"+ Type it in",
+    "추가":"Add",
+    "해당 국가":"your country",
+
+    "1 = 순한맛 · 10 = 불닭":"1 = mild · 10 = fire chicken",
+    "김치도 매워요":"Kimchi is spicy to me",
+    "불닭 완주 가능":"I can finish buldak",
+    "순한 편이시네요. 김치·고추장이 들어간 기본 메뉴도 맵게 느껴질 수 있어 그 점까지 감안해 추천할게요.":"You prefer mild food. Even standard dishes with kimchi or gochujang may taste hot, so we will factor that in.",
+    "한국인 평균과 비슷한 수준이에요. 대부분의 대표 메뉴를 무리 없이 즐길 수 있습니다.":"About the Korean average. You should be comfortable with most signature dishes.",
+    "매운 음식을 즐기시는군요. 낙지볶음이나 닭갈비 같은 본격적인 메뉴를 추천 상위에 올릴게요.":"You enjoy heat. Properly spicy dishes will be ranked higher for you.",
+    "한국인 중에서도 상위권입니다. 불닭 계열까지 추천 대상에 넣겠습니다.":"That is high even by Korean standards. Fire-chicken level dishes are on the table.",
+
+    "여러 개를 고를 수 있어요. 고른 재료가 들어간 메뉴는 추천 목록에서 아예 빠집니다.":"You can choose several. Anything containing them is dropped from your list.",
+    "없어요":"None",
+    "없음":"None",
+    "해당없음":"Not applicable",
+    "제한 없음":"No restriction",
+    "고른 유형을 모두 만족하는 메뉴만 남깁니다.":"Only places meeting every selected diet are kept.",
+    "할랄 음식만 보여주기":"Show halal places only",
+    "모든 메뉴를":"all places",
+    "할랄 인증 메뉴만":"halal places only",
+    "대상으로 추천합니다.":"will be recommended.",
+    "지금은":"Right now,",
+
+    "땅콩":"Peanut", "견과류":"Tree nuts", "우유":"Milk", "계란":"Egg",
+    "갑각류":"Crustacean", "조개·연체류":"Shellfish / mollusk", "밀·글루텐":"Wheat / gluten",
+    "대두":"Soy", "생선":"Fish", "메밀":"Buckwheat", "돼지고기":"Pork", "소고기":"Beef", "참깨":"Sesame",
+    "완전채식 (비건)":"Vegan", "락토 (유제품 O)":"Lacto (dairy OK)",
+    "오보 (달걀 O)":"Ovo (egg OK)", "페스코 (해산물 O)":"Pesco (seafood OK)",
+
+    "중국":"China", "일본":"Japan", "대만":"Taiwan", "미국":"USA", "베트남":"Vietnam",
+    "홍콩":"Hong Kong", "필리핀":"Philippines", "태국":"Thailand", "싱가포르":"Singapore",
+    "말레이시아":"Malaysia", "인도네시아":"Indonesia", "영국":"UK", "캐나다":"Canada",
+    "호주":"Australia", "프랑스":"France", "독일":"Germany",
+
+    "낯선 메뉴부터 도전해요":"I go for the unfamiliar first",
+    "처음 보는 이름일수록 끌립니다":"The stranger the name, the better",
+    "모험형":"Adventurous",
+    "지금 SNS에서 뜨는 메뉴요":"Whatever is trending right now",
+    "화제가 되는 건 일단 먹어봐야죠":"If people are talking about it, I want it",
+    "트렌드형":"Trend-led",
+    "검증된 맛집이 편해요":"I prefer proven places",
+    "실패 없는 선택이 최고입니다":"A safe choice is the best choice",
+    "정통파":"Classicist",
+    "조용한 로컬 식당":"Quiet local spots",
+    "현지인만 아는 골목 노포":"Back-alley places only locals know",
+    "로컬파":"Local-leaning",
+    "둘 다 상관없어요":"Either is fine",
+    "맛만 좋으면 어디든":"Anywhere, as long as it is good",
+    "균형파":"Balanced",
+    "사진 찍기 좋고 활기찬 곳":"Lively, photogenic places",
+    "트렌디한 인기 맛집":"Trendy and popular",
+    "핫플파":"Hotspot-leaning",
+
+    "골목 개척자":"Alley Pioneer",
+    "지도에 없는 골목을 먼저 걷는 사람":"You walk the alleys the maps leave out",
+    "관광 안내서에 실린 곳은 이미 재미가 없습니다. 간판도 흐릿한 노포에서 처음 보는 이름의 메뉴를 시키고, 그게 무슨 맛인지 스스로 알아내는 걸 즐기죠. 서울에서 가장 깊은 맛은 대개 이런 사람이 먼저 찾아냅니다.":"Anywhere already in a guidebook has lost its appeal. You order a dish you have never heard of at a place with a faded sign, and enjoy working out what it tastes like on your own. The deepest flavours in Seoul are usually found first by people like you.",
+    "노포 탐사":"Old-shop hunting", "현지어 메뉴판":"Korean-only menus", "발견의 기쁨":"Joy of discovery",
+    "무경계 미식가":"Borderless Eater",
+    "장소는 상관없어요, 처음 보는 메뉴면 됩니다":"The place does not matter, the dish being new does",
+    "분위기나 인테리어에는 큰 관심이 없습니다. 기준은 오직 하나, 아직 안 먹어본 것인가. 노포든 신상 카페든 가리지 않고 들어가서 가장 낯선 메뉴를 시킵니다. 하루에 네 끼도 가능한 타입.":"Atmosphere and interiors barely register. There is only one test: have I eaten this before? Old shop or brand-new cafe, you walk in and order the least familiar thing on the menu. Four meals a day is well within range.",
+    "가리지 않음":"No preferences", "신메뉴 우선":"New dishes first", "하루 네 끼":"Four meals a day",
+    "번개 도전자":"Lightning Challenger",
+    "핫플에서도 제일 낯선 메뉴를 시키는 사람":"Even at a hotspot, you order the strangest thing",
+    "사람 많은 곳의 에너지를 좋아하지만, 남들과 같은 걸 시키지는 않습니다. 줄 서 있는 가게에 들어가 메뉴판 맨 아래 처음 보는 이름을 고르는 쪽이죠. 속도도 빠릅니다. 한 곳에 오래 머물기보다 여러 곳을 거칩니다.":"You like the energy of a crowd, but you will not order what everyone else is ordering. You join the queue, then pick the unfamiliar name at the bottom of the menu. You move fast, too, covering several places rather than settling into one.",
+    "비주류 메뉴":"Off-menu picks", "빠른 회전":"Fast turnover", "한입씩":"One bite each",
+    "숨은 화제 헌터":"Early-Signal Hunter",
+    "뜨기 직전의 로컬을 먼저 찾아내는 사람":"You find local places just before they blow up",
+    "유행은 챙기지만 이미 붐비는 곳은 늦었다고 생각합니다. 언급량이 막 오르기 시작한 조용한 동네 가게를 찾아내 남들보다 먼저 다녀오는 게 목표죠. 결과적으로 가장 좋은 타이밍에 가장 좋은 자리에 앉습니다.":"You follow trends, but a place that is already packed is a place you are late to. You look for the quiet neighbourhood shop whose mentions have just begun to climb, and get there first. The result is the best seat at the best moment.",
+    "언급량 급상승":"Rising mentions", "선점":"Getting there first", "한적한 시간대":"Off-peak hours",
+    "인플루언서 미식가":"Influencer Diner",
+    "화제의 메뉴는 일단 다 먹어봐야 하는 사람":"If a dish is the talk of the city, you have to try it",
+    "지금 서울에서 무엇이 화제인지 늘 알고 있습니다. 장소의 성격은 따지지 않고, 화제성이 곧 방문 이유가 되죠. 먹은 것을 기록하고 공유하는 것까지가 한 끼의 완성입니다.":"You always know what Seoul is talking about. The character of the venue matters less than the fact that people are talking, and a meal is not finished until it has been recorded and shared.",
+    "실시간 화제":"Live buzz", "기록과 공유":"Record and share", "타이밍 감각":"Sense of timing",
+    "핫플 스트리터":"Hotspot Streeter",
+    "지금 가장 뜨거운 곳에 가장 먼저 도착하는 사람":"First to arrive wherever the city is hottest",
+    "줄이 길수록 확신이 생기는 타입입니다. 성수, 연남, 을지로처럼 지금 사람이 몰리는 거리를 걸으며 화제의 가게를 차례로 방문합니다. 한 곳에서 한두 개만 먹고 다음 가게로 이동하는 스트리트 스타일.":"A longer queue only makes you more certain. You walk the streets where the crowds are right now and work through the talked-about places one by one, eating a dish or two before moving on.",
+    "웨이팅 감수":"Happy to queue", "거리 단위 이동":"Street by street", "핫플 순회":"Hotspot circuit",
+    "조용한 정석파":"Quiet Traditionalist",
+    "검증된 노포에서 혼자만의 루틴을 지키는 사람":"You keep your own routine at places that have proved themselves",
+    "새로움보다 안정감을 삽니다. 수십 년 같은 메뉴를 내는 가게에서, 붐비지 않는 시간에, 늘 시키던 것을 시키는 편안함이죠. 여행지에서도 이 리듬이 무너지지 않기를 바랍니다.":"You buy reassurance rather than novelty: the same dish, at a shop that has served it for decades, at an hour when it is not busy. You would like that rhythm to survive the trip too.",
+    "노포 정식":"Old-shop set menu", "한산한 시간":"Quiet hours", "같은 메뉴":"The usual order",
+    "든든한 푸드메이트":"Dependable Food Mate",
+    "누구와 가도 실패 없는 선택을 하는 사람":"Whoever you are with, your pick works",
+    "일행 중 누구도 못 먹는 것이 없게 고르는 감각이 있습니다. 매운 정도, 알레르기, 식단까지 두루 살펴 가장 무난하면서도 만족스러운 한 상을 차려내죠. 여행 첫 끼를 맡기기 좋은 사람.":"You have a feel for choosing so that nobody in the group is left out, weighing heat, allergies and diets to land on a table that satisfies everyone. A good person to hand the first meal of a trip to.",
+    "모두 만족":"Everyone happy", "한 상 차림":"Shared table", "안전한 선택":"Safe choice",
+    "안전한 핫플러":"Careful Trend-Follower",
+    "인기 있는 곳 중에서도 확실한 것만 고르는 사람":"At a popular place, you order the sure thing",
+    "활기찬 분위기는 좋지만 모험까지 할 생각은 없습니다. 인기 있는 가게에 가되 그 집의 대표 메뉴, 후기가 가장 많은 메뉴를 시킵니다. 실패 확률이 가장 낮은 방식으로 트렌드를 즐기는 방법이죠.":"You enjoy a lively room but have no interest in gambling with it. You go to the popular place and order its signature dish, the one with the most reviews. It is the lowest-risk way to enjoy a trend.",
+    "검증된 인기":"Proven favourites", "대표 메뉴":"Signature menu", "후기 1위":"Most reviewed",
+
+    "비짓서울 API 음식 콘텐츠 불러오는 중":"Loading VisitSeoul food content",
+    "국적별 선호 통계 대조하는 중":"Comparing nationality preference data",
+    "알레르기 · 채식 · 할랄 조건으로 거르는 중":"Filtering by allergy, vegetarian and halal conditions",
+    "SNS 실시간 화제성 반영하는 중":"Ranking by distance from you",
+    "맞춰보고 있어요":"Matching",
+    "서울에서":"In Seoul,",
+    "여행자 데이터와":"traveller data and",
+
+    "내 유형":"My type", "주변 맛집":"Nearby", "유형 가이드":"Types", "내 조건":"My settings",
+    "당신의 미식가 유형":"Your taste persona",
+    "다른 유형 미리보기":"Previewing another type",
+    "유형으로 미리보는 중":"preview",
+    "유형 기준 추천":"recommendations",
+    "내 유형으로":"Back to my type",
+    "입력한 조건":"Your settings",
+    "국적":"Nationality", "매운맛":"Spice", "분위기":"Atmosphere",
+    "주변 상위 추천":"Top picks nearby",
+    "9가지 유형 둘러보기":"Browse all 9 types",
+    "9가지 미식가 유형":"Nine taste personas",
+    "새로운 메뉴를 고르는 방식(가로 축)과 선호하는 식당 분위기(세로 축)를 조합해 아홉 가지가 나옵니다. 눌러서 다른 유형의 추천도 볼 수 있어요.":"How you choose something new (horizontal axis) combined with the kind of room you prefer (vertical axis) gives nine types. Tap one to see its recommendations.",
+    "미식가 유형":"Taste persona",
+    "유형 소개":"About this type",
+    "이 유형의 기준":"What defines this type",
+    "메뉴 선택":"Choosing", "식당 분위기":"Atmosphere",
+    "이 유형 기준으로 추천 보기":"See recommendations for this type",
+    "내 조건(국적·매운맛·알레르기)은 그대로 두고, 이 유형의 성향만 적용해 다시 계산합니다.":"Your own settings stay as they are; only this type's tendencies are applied.",
+    "내 추천 맛집 보기":"See my recommendations",
+
+    "현재 위치":"Current location",
+    "현재 위치 (서울 밖)":"Current location (outside Seoul)",
+    "변경":"Change", "닫기":"Close",
+    "📍 지금 내 위치로 설정하기":"📍 Use my current location",
+    "또는 이동 거점에서 고르기":"Or pick a starting point",
+    "이 브라우저에서는 위치를 가져올 수 없어요. 아래에서 거점을 골라주세요.":"This browser cannot provide your location. Pick a starting point below.",
+    "위치를 확인하는 중…":"Getting your location…",
+    "위치 권한이 없어요. 아래에서 거점을 골라주세요.":"Location permission was denied. Pick a starting point below.",
+    "서울 밖이라 반경 안에 결과가 없을 수 있어요. 거점을 골라 데모로 볼 수 있습니다.":"You are outside Seoul, so there may be nothing in range. Pick a starting point to try it out.",
+    "명동역":"Myeongdong Stn.", "종로3가역":"Jongno 3-ga Stn.", "홍대입구역":"Hongik Univ. Stn.",
+    "이태원역":"Itaewon Stn.", "서울역":"Seoul Stn.", "동대문역사문화공원":"DDP Stn.",
+    "성수역":"Seongsu Stn.", "강남역":"Gangnam Stn.",
+
+    "반경":"Radius", "곳":" places", "보기":"Show", "접기":"Hide",
+    "매치도 = 국적 선호 28% · 매운맛 22% ·":"Match = nationality 28% · spice 22% ·",
+    "거리 20%":"distance 20%",
+    "· 탐색 성향 16% · 분위기 14%":"· exploration 16% · atmosphere 14%",
+    "에게 가까운 순서":"— nearest first",
+    "🔎 비짓서울 API에서 실제 음식 콘텐츠를 불러오는 중이에요…":"🔎 Loading real food content from the VisitSeoul API…",
+    "🔎 비짓서울 API에서 불러오는 중 —":"🔎 Loading from the VisitSeoul API —",
+    "비짓서울 API에서 데이터를 불러오지 못했어요.":"Could not load data from the VisitSeoul API.",
+    "다시 시도하기":"Try again",
+    "안에는 조건에 맞는 곳이 없어요.":"has nothing matching your settings.",
+    "가장 가까운 곳은":"The nearest is",
+    "거리예요. 반경을 넓혀보세요.":"away. Try widening the radius.",
+    "제외된":"Excluded", "곳 · 반경 밖":" · out of range",
+    "· 조건 불일치":"· conditions not met", "· 반경 밖":"· out of range",
+    "목록에 뜨는 곳은 모두 비짓서울 API에 실제로 등록된 콘텐츠이고, 지도의 위치는 API가 준 실제 좌표입니다(OpenStreetMap). 거리·도보 시간은 직선거리 기준 추정값이며, 매운맛·알레르기는 이름·대표 메뉴에서 추정한 값입니다.":"Every place listed is real content registered in the VisitSeoul API, and map positions use the coordinates the API returned (map tiles by OpenStreetMap). Distances and walking times are straight-line estimates, and spice and allergen values are inferred from the venue name and signature menu.",
+    "지도에서 주변":"View", "곳 보기":"places on the map",
+
+    "걸어서":"walk", "분":" min", "거리":"Distance",
+    "/10 추정":"/10 est.", "중간":"Balanced",
+    "채식 가능":"Vegetarian options", "할랄":"Halal",
+    "조용한 로컬":"Quiet local", "트렌디한 핫플":"Trendy hotspot",
+    "익숙한 편":"Familiar", "적당히 새로운":"Fairly new", "낯선 메뉴":"Unfamiliar",
+
+    "뒤로":"Back",
+    "여기서 가는 길":"Getting there",
+    "에서":"from",
+    "· 도보":"· walk",
+    "📍 비짓서울 API가 제공한 실제 좌표(":"📍 Shown at the exact coordinates provided by the VisitSeoul API (",
+    ")로 표시했습니다.":").",
+    "이 점수가 나온 이유":"Why this score",
+    "내 조건과 대조":"Against your settings",
+    "(반경":"(within", "기준)":")",
+    "여행자 선호도":"traveller preference",
+    "매운 정도":"Spice level", "/ 10 (내 기준":"/ 10 (yours:",
+    "알레르기 유발 성분":"Possible allergens",
+    "추정된 성분 없음":"None detected",
+    "채식":"Vegetarian",
+    "채식 관련 표기 있음":"Vegetarian info available",
+    "채식 정보 없음":"No vegetarian info",
+    "관련 표기 있음":"Information available",
+    "정보 없음":"No information",
+    "매운맛·알레르기 성분은 비짓서울 API에 없는 항목이라, 가게 이름·대표 메뉴·태그를 기준으로":"Spice level and allergens are not fields in the VisitSeoul API, so they are",
+    "추정":"estimated",
+    "한 값입니다. 할랄·채식은 API가 제공하는 표기를 그대로 씁니다.":"from the venue name, signature menu and tags. Halal and vegetarian information comes straight from the API.",
+    "비짓서울 원본 데이터":"Raw VisitSeoul data",
+    "다음 한 입":"Next bite",
+    "응답에 데이터가 없어요":"The response contained no data",
+
+    "국적별 선호도":"Nationality preference",
+    "매운맛 적합도":"Spice fit",
+    "현재 위치에서 거리":"Distance from you",
+    "탐색 성향 적합도":"Exploration fit",
+    "분위기 적합도":"Atmosphere fit",
+
+    "값을 바꾸면 유형과 추천이 즉시 다시 계산됩니다.":"Changing a value recalculates your type and recommendations immediately.",
+    "수정":"Edit",
+    "처음부터 다시 하기":"Start over",
+    "저장하고 돌아가기":"Save and go back",
+    "취소":"Cancel", "다음":"Next", "이전":"Back",
+    "알레르기 · 못 먹는 재료":"Allergies / avoid",
+    "메뉴 선택 성향":"Choosing style",
+    "같은 조건을 입력한":"Among",
+    "여행자 중 이 유형의 비율이에요.":"travellers who entered the same settings, this is how many share your type.",
+    "2026 서울관광재단 비짓서울 API 데이터·AI 활용 아이디어 공모전 · 미식 프로파일러 프로토타입. 메뉴 데이터는 비짓서울 API 음식 콘텐츠 구조를 본뜬 샘플입니다.":"2026 Seoul Tourism Organization VisitSeoul API Data & AI Idea Competition · TasteMatch Seoul prototype. All venue data is live content from the VisitSeoul Open API.",
+
+    "한식":"Korean", "분식":"Street food", "카페":"Cafe", "중식":"Chinese",
+    "일식":"Japanese", "양식":"Western", "기타":"Other",
+    "맛집":"Restaurant", "식당":"Restaurant", "한정식":"Korean set menu",
+    "국수":"Noodles", "고기":"Grilled meat", "해산물":"Seafood", "서울":"Seoul",
+    "이름 없음":"Unnamed",
+    "콘텐츠 ID (cid)":"Content ID (cid)", "분류":"Category", "주소":"Address",
+    "가까운 역":"Nearest station", "전화":"Phone", "영업시간":"Opening hours",
+    "휴무":"Closed", "할랄 표기":"Halal labelling", "채식 표기":"Vegetarian labelling", "태그":"Tags",
+    "비짓서울 API를 호출하는 중…":"Calling the VisitSeoul API…",
+    "호출에 실패했어요":"The request failed",
+    "🔄 지금 비짓서울 API에서 다시 불러오기":"🔄 Reload from the VisitSeoul API now",
+    "이 화면의 이름·주소·좌표·영업정보는 모두 비짓서울 API 콘텐츠 상세(contents/info) 응답에서 그대로 가져온 값입니다.":"The name, address, coordinates and opening details on this screen come straight from the VisitSeoul contents/info response.",
+    "지도를 불러오지 못했어요.<br>잠시 후 다시 열어보세요.":"Could not load the map.<br>Please try again shortly.",
+    "현재 위치에서 가까운 순으로 정렬하는 중":"Ranking by distance from you",
+    "화면에 나오는 장소는 모두 비짓서울 API에서 실시간으로 받아온 실제 콘텐츠입니다. 매운맛·알레르기는 가게 이름과 대표 메뉴에서 추정합니다.":"Every place shown is live content from the VisitSeoul Open API. Spice level and allergens are estimated from the venue name and signature menu.",
+    "2026 서울관광재단 비짓서울 API 데이터·AI 활용 아이디어 공모전 · 미식 프로파일러 프로토타입. 모든 장소 데이터는 비짓서울 API 실시간 응답입니다.":"2026 Seoul Tourism Organization VisitSeoul API Data & AI Idea Competition · TasteMatch Seoul prototype. All venue data comes live from the VisitSeoul Open API.",
+    "국적별 메뉴 선호 통계를 추천 점수의 28%로 반영합니다.":"Nationality-based preference data accounts for 28% of the match score.",
+    "할랄 정보 없음":"No halal information",
+    "비짓서울 API에서 음식 콘텐츠를 찾지 못했어요.":"No food content was found in the VisitSeoul API.",
+    "좌표가 있는 음식 콘텐츠를 찾지 못했어요.":"No food content with coordinates was found.",
+    "비짓서울 API에 등록된 장소입니다.":"A place registered in the VisitSeoul API.",
+    "시":":", "분 ":" min "
+  };
+
+  var TPL = {
+    ko: {
+      nearest: "가장 가까운 곳은 {name} — {dist} 거리예요. 반경을 넓혀보세요.",
+      emptyRadius: "반경 {r} 안에는 조건에 맞는 곳이 없어요.",
+      offnote: "제외된 {n}곳 · 반경 밖 {far} · 조건 불일치 {blocked}",
+      nearOrder: "{persona}에게 가까운 순서",
+      mapCount: "지도에서 주변 {n}곳 보기",
+      cohort: "같은 조건을 입력한 {nat} 여행자 중 이 유형의 비율이에요.",
+      fromOrigin: "{origin}에서",
+      distWalk: "{dist} · 도보 {min}분",
+      walkMin: "걸어서 {min}분",
+      distReason: "현재 위치에서 {dist} · 걸어서 {min}분이에요",
+      natReason: "{nat} 여행자의 {kind} 선호도 {score}점이에요",
+      spiceExact: "매운맛 {v}/10(추정) — 설정한 수준과 일치해요",
+      spiceNear: "매운맛 {v}/10(추정) — 감당 가능한 범위예요",
+      spicePlain: "매운맛 {v}/10(추정)",
+      exploreAdv: "{novelty} — 도전을 즐기는 성향과 맞아요",
+      exploreTrend: "{vibe} 분위기로 분류됐어요",
+      exploreProven: "무난하게 고르기 좋은 유형이에요",
+      vibeReason: "{vibe} 분위기 — 선호와 맞아요",
+      radiusBasis: "{dist} (반경 {r} 기준)",
+      spiceMine: "{v} / 10 (내 기준 {mine})",
+      natPref: "{nat} 여행자 선호도",
+      loadProgress: "🔎 비짓서울 API에서 불러오는 중 — {done} / {total}곳",
+      poolLoading: "🔎 비짓서울 API에서 실제 음식 콘텐츠를 불러오는 중이에요…",
+      reloadedAt: "✅ {at}에 다시 불러왔어요 — {name}",
+      blockedAllergy: "알레르기 추정 · {list}",
+      coordNote: "📍 비짓서울 API가 제공한 실제 좌표({lat}, {lng})로 표시했습니다.",
+      placeCount: "{n}곳"
+    },
+    en: {
+      nearest: "The nearest is {name}, {dist} away. Try widening the radius.",
+      emptyRadius: "Nothing within {r} matches your settings.",
+      offnote: "{n} excluded · {far} out of range · {blocked} conditions not met",
+      nearOrder: "Nearest first for the {persona}",
+      mapCount: "View {n} places on the map",
+      cohort: "Among travellers from {nat} who entered the same settings, this is how many share your type.",
+      fromOrigin: "From {origin}",
+      distWalk: "{dist} · {min} min walk",
+      walkMin: "{min} min walk",
+      distReason: "{dist} from you · about {min} minutes on foot",
+      natReason: "{kind} scores {score} with travellers from {nat}",
+      spiceExact: "Spice {v}/10 (est.) — exactly your level",
+      spiceNear: "Spice {v}/10 (est.) — within your range",
+      spicePlain: "Spice {v}/10 (est.)",
+      exploreAdv: "{novelty} — suits your appetite for the new",
+      exploreTrend: "Classed as a {vibe} room",
+      exploreProven: "An easy, low-risk choice",
+      vibeReason: "{vibe} — matches what you like",
+      radiusBasis: "{dist} (within {r})",
+      spiceMine: "{v} / 10 (yours: {mine})",
+      natPref: "Preference for {nat} travellers",
+      loadProgress: "🔎 Loading from the VisitSeoul API — {done} / {total}",
+      poolLoading: "🔎 Loading real food content from the VisitSeoul API…",
+      reloadedAt: "✅ Reloaded at {at} — {name}",
+      blockedAllergy: "Possible allergen · {list}",
+      coordNote: "📍 Shown at the exact coordinates from the VisitSeoul API ({lat}, {lng}).",
+      placeCount: "{n} places"
+    }
+  };
+
+  function trSeg(seg){
+    if(typeof state === 'undefined' || !state || state.lang !== 'en') return seg;
+    if(!/[가-힣]/.test(seg)) return seg;
+    var d = I18N_EN;
+    if(d[seg] != null) return d[seg];
+    var k = seg.trim();
+    if(k && d[k] != null){
+      var lead = seg.slice(0, seg.indexOf(k));
+      var tail = seg.slice(seg.indexOf(k) + k.length);
+      return lead + d[k] + tail;
+    }
+    return seg;
+  }
+  /* 태그는 그대로 두고 텍스트만 번역 (속성 중 placeholder/aria-label은 번역) */
+  function t(str){
+    if(str == null || typeof state === 'undefined' || !state || state.lang !== 'en') return str;
+    var s = String(str);
+    if(s.indexOf('<') < 0) return trSeg(s);
+    return s.replace(/(<[^>]*>)|([^<]+)/g, function(m, tag, text){
+      if(tag){
+        return tag.replace(/(placeholder|aria-label|title)="([^"]*)"/g, function(mm, attr, val){
+          return attr + '="' + trSeg(val) + '"';
+        });
+      }
+      return trSeg(text);
+    });
+  }
+  function tpl(id, vars){
+    var table = TPL[state.lang] || TPL.ko;
+    var s = table[id] || TPL.ko[id] || '';
+    return s.replace(/\{(\w+)\}/g, function(m, k){
+      return vars && vars[k] != null ? String(vars[k]) : '';
+    });
+  }
+  function apiLang(){
+    var l = LANGS.filter(function(x){ return x.key === state.lang; })[0];
+    return l ? l.api : 'ko';
+  }
+  function setLang(next){
+    if(state.lang === next) return;
+    state.lang = next;
+    try{ localStorage.setItem('tastematch.lang', next); }catch(e){}
+    PLACES = [];
+    state.pool = { status:'idle', done:0, total:0, error:'', fromCache:false };
+    state.rawCache = {};
+    loadRealPlaces();
+    render();
+  }
+  function langSwitchHtml(){
+    return '<div class="langbar">' + LANGS.map(function(l){
+      return '<button class="langbtn ' + (state.lang === l.key ? 'on' : '') + '" data-action="lang" data-key="' + l.key + '">' + l.label + '</button>';
+    }).join('') + '</div>';
   }
 
   /* ============================================================
@@ -1193,6 +1583,7 @@
     showLoc: false,
     showOff: false,
     geoMsg: '',
+    lang: 'ko',
     rawCache: {},
     pool: { status:'idle', done:0, total:0, error:'', fromCache:false },
     profile: {
@@ -1217,9 +1608,9 @@
   }
 
   function natLabel(p){
-    if(p.natKey === 'custom') return p.natCustom || '해당 국가';
+    if(p.natKey === 'custom') return p.natCustom || t('해당 국가');
     var f = NATIONS.filter(function(n){ return n.key === p.natKey; })[0];
-    return f ? f.label : '해당 국가';
+    return f ? t(f.label) : t('해당 국가');
   }
   function comboKey(p){ return (p.explore || 'trend') + '-' + (p.atmosphere || 'either'); }
   function personaOf(p){ return PERSONAS[comboKey(p)]; }
@@ -1263,32 +1654,33 @@
     });
     var saved = loadSaved();
     return '<div class="screen intro"><div class="scroll"><div class="intro-body">' +
-      '<div class="logo-row">' + ICON.mark + '<b>TasteMatch Seoul</b><span>비짓서울 API</span></div>' +
-      '<h1 class="display">서울에서<br>당신의 한 입을 찾습니다</h1>' +
-      '<p class="lede">국적별 선호 데이터와 당신의 입맛, 지금 있는 자리에서의 거리를 겹쳐 <b>지금 걸어갈 수 있는</b> 한 끼를 고릅니다. 알레르기·채식·할랄 조건은 추천에서 자동으로 걸러냅니다.</p>' +
+      '<div class="langrow" style="padding:0 0 12px;justify-content:flex-end">' + langSwitchHtml() + '</div>' +
+      '<div class="logo-row">' + ICON.mark + t('<b>TasteMatch Seoul</b><span>비짓서울 API</span></div>') +
+      t('<h1 class="display">서울에서<br>당신의 한 입을 찾습니다</h1>') +
+      t('<p class="lede">국적별 선호 데이터와 당신의 입맛, 지금 있는 자리에서의 거리를 겹쳐 <b>지금 걸어갈 수 있는</b> 한 끼를 고릅니다. 알레르기·채식·할랄 조건은 추천에서 자동으로 걸러냅니다.</p>') +
       '<div class="char-strip">' + cells + '</div>' +
       '<div class="facts">' +
-        '<div class="fact"><b>6,568</b><span>비짓서울 음식 콘텐츠</span></div>' +
-        '<div class="fact"><b>16</b><span>국적별 선호 데이터</span></div>' +
-        '<div class="fact"><b>500m~</b><span>반경 기반 주변 추천</span></div>' +
+        t('<div class="fact"><b>6,568</b><span>비짓서울 음식 콘텐츠</span></div>') +
+        t('<div class="fact"><b>16</b><span>국적별 선호 데이터</span></div>') +
+        t('<div class="fact"><b>500m~</b><span>반경 기반 주변 추천</span></div>') +
       '</div>' +
       '</div></div>' +
       '<div class="intro-foot">' +
-      (saved ? '<button class="cta" data-action="resume">저장된 프로필로 계속하기</button>' +
-               '<button class="cta ghost" data-action="start">처음부터 다시 하기</button>'
-             : '<button class="cta" data-action="start">시작하기 · 7문항</button>') +
-      '<p class="fine" style="color:var(--on-panel-dim)">샘플 데이터로 동작하는 프로토타입입니다. 실제 서비스에서는 비짓서울 API의 음식 콘텐츠와 실시간 SNS 지표를 연결합니다.</p>' +
+      (saved ? t('<button class="cta" data-action="resume">저장된 프로필로 계속하기</button>') +
+               t('<button class="cta ghost" data-action="start">처음부터 다시 하기</button>')
+             : t('<button class="cta" data-action="start">시작하기 · 7문항</button>')) +
+      t('<p class="fine" style="color:var(--on-panel-dim)">화면에 나오는 장소는 모두 비짓서울 API에서 실시간으로 받아온 실제 콘텐츠입니다. 매운맛·알레르기는 가게 이름과 대표 메뉴에서 추정합니다.</p>') +
       '</div></div>';
   }
 
   var STEPS = [
-    { title:'국적이 어떻게 되세요?', note:'국적별 메뉴 선호 통계를 추천 점수의 30%로 반영합니다.' },
-    { title:'새로운 메뉴, 어떻게 고르세요?', note:'미식가 유형을 결정하는 첫 번째 축입니다.' },
-    { title:'식당 분위기는 어떤 쪽이 좋아요?', note:'미식가 유형을 결정하는 두 번째 축입니다.' },
-    { title:'매운맛, 어디까지 괜찮으세요?', note:'한국 음식은 같은 이름이어도 매운 정도가 크게 다릅니다.' },
-    { title:'알레르기나 못 먹는 재료가 있나요?', note:'선택한 재료가 들어간 메뉴는 추천에서 완전히 제외됩니다.' },
-    { title:'채식 유형이 있나요?', note:'해당하는 유형을 만족하는 메뉴만 남깁니다.' },
-    { title:'할랄 인증이 필요하세요?', note:'할랄 인증이 확인된 메뉴만 추천합니다.' }
+    { title:t('국적이 어떻게 되세요?'), note:t('국적별 메뉴 선호 통계를 추천 점수의 30%로 반영합니다.') },
+    { title:t('새로운 메뉴, 어떻게 고르세요?'), note:t('미식가 유형을 결정하는 첫 번째 축입니다.') },
+    { title:t('식당 분위기는 어떤 쪽이 좋아요?'), note:t('미식가 유형을 결정하는 두 번째 축입니다.') },
+    { title:t('매운맛, 어디까지 괜찮으세요?'), note:t('한국 음식은 같은 이름이어도 매운 정도가 크게 다릅니다.') },
+    { title:t('알레르기나 못 먹는 재료가 있나요?'), note:t('선택한 재료가 들어간 메뉴는 추천에서 완전히 제외됩니다.') },
+    { title:t('채식 유형이 있나요?'), note:t('해당하는 유형을 만족하는 메뉴만 남깁니다.') },
+    { title:t('할랄 인증이 필요하세요?'), note:t('할랄 인증이 확인된 메뉴만 추천합니다.') }
   ];
 
   function stepValid(){
@@ -1311,13 +1703,13 @@
     list.forEach(function(n, i){
       var rank = NATIONS.indexOf(n) + 1;
       html += '<button class="chip ' + (p.natKey === n.key ? 'on' : '') + '" data-action="nat" data-key="' + n.key + '">' +
-              '<span class="rank">' + rank + '</span>' + esc(n.label) + '</button>';
+              '<span class="rank">' + rank + '</span>' + esc(t(n.label)) + '</button>';
     });
-    if(!list.length) html += '<p class="empty-note">검색 결과가 없어요. 아래 <b>직접 입력</b>으로 추가해 주세요.</p>';
+    if(!list.length) html += t('<p class="empty-note">검색 결과가 없어요. 아래 <b>직접 입력</b>으로 추가해 주세요.</p>');
     if(p.natKey === 'custom' && p.natCustom){
       html += '<button class="chip on" data-action="nat-clear">' + esc(p.natCustom) + ' <span aria-hidden="true">✕</span></button>';
     }
-    html += '<button class="chip dash" data-action="nat-custom-toggle">+ 직접 입력</button>';
+    html += t('<button class="chip dash" data-action="nat-custom-toggle">+ 직접 입력</button>');
     return html;
   }
 
@@ -1326,23 +1718,23 @@
     var list = ALLERGENS.filter(function(a){ return !q || a.label.indexOf(q) >= 0; });
     list.forEach(function(a){
       var on = !p.noAllergy && p.allergens.indexOf(a.key) >= 0;
-      html += '<button class="chip ' + (on ? 'on' : '') + '" data-action="alg" data-key="' + a.key + '">' + esc(a.label) + '</button>';
+      html += '<button class="chip ' + (on ? 'on' : '') + '" data-action="alg" data-key="' + a.key + '">' + esc(t(a.label)) + '</button>';
     });
-    if(!list.length) html += '<p class="empty-note">목록에 없네요. <b>직접 입력</b>으로 추가해 주세요.</p>';
+    if(!list.length) html += t('<p class="empty-note">목록에 없네요. <b>직접 입력</b>으로 추가해 주세요.</p>');
     p.customAllergens.forEach(function(t, i){
       html += '<button class="chip on" data-action="alg-remove" data-idx="' + i + '">' + esc(t) + ' <span aria-hidden="true">✕</span></button>';
     });
-    html += '<button class="chip dash" data-action="alg-custom-toggle">+ 직접 입력</button>';
-    html += '<button class="chip neutral ' + (p.noAllergy ? 'on' : '') + '" data-action="alg-none">없어요</button>';
+    html += t('<button class="chip dash" data-action="alg-custom-toggle">+ 직접 입력</button>');
+    html += '<button class="chip neutral ' + (p.noAllergy ? 'on' : '') + t('" data-action="alg-none">없어요</button>');
     return html;
   }
 
   function spiceNote(v){
     if(v === null) return '';
-    if(v <= 2) return '순한 편이시네요. 김치·고추장이 들어간 기본 메뉴도 맵게 느껴질 수 있어 그 점까지 감안해 추천할게요.';
-    if(v <= 5) return '한국인 평균과 비슷한 수준이에요. 대부분의 대표 메뉴를 무리 없이 즐길 수 있습니다.';
-    if(v <= 8) return '매운 음식을 즐기시는군요. 낙지볶음이나 닭갈비 같은 본격적인 메뉴를 추천 상위에 올릴게요.';
-    return '한국인 중에서도 상위권입니다. 불닭 계열까지 추천 대상에 넣겠습니다.';
+    if(v <= 2) return t('순한 편이시네요. 김치·고추장이 들어간 기본 메뉴도 맵게 느껴질 수 있어 그 점까지 감안해 추천할게요.');
+    if(v <= 5) return t('한국인 평균과 비슷한 수준이에요. 대부분의 대표 메뉴를 무리 없이 즐길 수 있습니다.');
+    if(v <= 8) return t('매운 음식을 즐기시는군요. 낙지볶음이나 닭갈비 같은 본격적인 메뉴를 추천 상위에 올릴게요.');
+    return t('한국인 중에서도 상위권입니다. 불닭 계열까지 추천 대상에 넣겠습니다.');
   }
 
   function screenOnboarding(){
@@ -1350,54 +1742,54 @@
 
     if(s === 0){
       body = '<div class="search-row">' + ICON.search +
-             '<input type="text" id="natSearch" placeholder="국가 검색 (예: 캐나다, 태국)" value="' + esc(state.natQuery) + '" autocomplete="off"></div>' +
+             t('<input type="text" id="natSearch" placeholder="국가 검색 (예: 캐나다, 태국)" value="') + esc(state.natQuery) + '" autocomplete="off"></div>' +
              '<div class="chips" id="natChips">' + natChipsHTML() + '</div>' +
-             (state.showNatCustom ? '<div class="custom-row"><input type="text" id="natCustom" placeholder="예: 브라질, 스페인" autocomplete="off"><button data-action="nat-custom-add">추가</button></div>' : '') +
-             '<p class="muted">방한 관광객 수가 많은 국가 순으로 정렬했습니다. 목록에 없으면 직접 입력해 주세요.</p>';
+             (state.showNatCustom ? t('<div class="custom-row"><input type="text" id="natCustom" placeholder="예: 브라질, 스페인" autocomplete="off"><button data-action="nat-custom-add">추가</button></div>') : '') +
+             t('<p class="muted">방한 관광객 수가 많은 국가 순으로 정렬했습니다. 목록에 없으면 직접 입력해 주세요.</p>');
     } else if(s === 1 || s === 2){
       var opts = s === 1 ? EXPLORE : ATMOS;
       var cur = s === 1 ? p.explore : p.atmosphere;
       var act = s === 1 ? 'explore' : 'atmos';
       body = '<div class="choices">' + opts.map(function(o){
         return '<button class="choice ' + (cur === o.key ? 'on' : '') + '" data-action="' + act + '" data-key="' + o.key + '">' +
-               '<span class="dot"></span><span><b>' + esc(o.label) + '</b><small>' + esc(o.sub) + '</small></span></button>';
+               '<span class="dot"></span><span><b>' + esc(t(o.label)) + '</b><small>' + esc(t(o.sub)) + '</small></span></button>';
       }).join('') + '</div>';
     } else if(s === 3){
       var pep = '';
       for(var i=1;i<=10;i++){
         var on = p.spice !== null && i <= p.spice;
         var peak = p.spice === i;
-        pep += '<button class="pepper ' + (on ? 'on' : '') + ' ' + (peak ? 'peak' : '') + '" data-action="spice" data-key="' + i + '" aria-label="매운맛 ' + i + '점">🌶️</button>';
+        pep += '<button class="pepper ' + (on ? 'on' : '') + ' ' + (peak ? 'peak' : '') + '" data-action="spice" data-key="' + i + t('" aria-label="매운맛 ') + i + t('점">🌶️</button>');
       }
-      body = '<div class="spice-head"><span class="muted">1 = 순한맛 · 10 = 불닭</span>' +
+      body = t('<div class="spice-head"><span class="muted">1 = 순한맛 · 10 = 불닭</span>') +
              '<span class="spice-val">' + (p.spice === null ? '—' : p.spice + '/10') + '</span></div>' +
              '<div class="pepper-row">' + pep + '</div>' +
-             '<div class="scale-ends"><span>김치도 매워요</span><span>불닭 완주 가능</span></div>' +
+             t('<div class="scale-ends"><span>김치도 매워요</span><span>불닭 완주 가능</span></div>') +
              (p.spice !== null ? '<div class="spice-note">' + esc(spiceNote(p.spice)) + '</div>' : '');
     } else if(s === 4){
       body = '<div class="search-row">' + ICON.search +
-             '<input type="text" id="algSearch" placeholder="재료 검색 (예: 갑각류, 글루텐)" value="' + esc(state.algQuery) + '" autocomplete="off"></div>' +
+             t('<input type="text" id="algSearch" placeholder="재료 검색 (예: 갑각류, 글루텐)" value="') + esc(state.algQuery) + '" autocomplete="off"></div>' +
              '<div class="chips" id="algChips">' + algChipsHTML() + '</div>' +
-             (state.showAlgCustom ? '<div class="custom-row"><input type="text" id="algCustom" placeholder="예: 참외, 키위" autocomplete="off"><button data-action="alg-custom-add">추가</button></div>' : '') +
-             '<p class="muted">여러 개를 고를 수 있어요. 고른 재료가 들어간 메뉴는 추천 목록에서 아예 빠집니다.</p>';
+             (state.showAlgCustom ? t('<div class="custom-row"><input type="text" id="algCustom" placeholder="예: 참외, 키위" autocomplete="off"><button data-action="alg-custom-add">추가</button></div>') : '') +
+             t('<p class="muted">여러 개를 고를 수 있어요. 고른 재료가 들어간 메뉴는 추천 목록에서 아예 빠집니다.</p>');
     } else if(s === 5){
       body = '<div class="chips">' + VEGAN_TYPES.map(function(v){
         var on = !p.veganNone && p.vegan.indexOf(v.key) >= 0;
-        return '<button class="chip ' + (on ? 'on' : '') + '" data-action="vegan" data-key="' + v.key + '">' + esc(v.label) + '</button>';
+        return '<button class="chip ' + (on ? 'on' : '') + '" data-action="vegan" data-key="' + v.key + '">' + esc(t(v.label)) + '</button>';
       }).join('') +
-      '<button class="chip neutral ' + (p.veganNone ? 'on' : '') + '" data-action="vegan-none">해당없음</button></div>' +
-      '<p class="muted">고른 유형을 모두 만족하는 메뉴만 남깁니다.</p>';
+      '<button class="chip neutral ' + (p.veganNone ? 'on' : '') + t('" data-action="vegan-none">해당없음</button></div>') +
+      t('<p class="muted">고른 유형을 모두 만족하는 메뉴만 남깁니다.</p>');
     } else {
-      body = '<div class="switch-row"><span><b>할랄 음식만 보여주기</b>' +
-             '<small>할랄 인증 또는 성분이 확인된 메뉴만 추천합니다.</small></span>' +
-             '<button class="switch ' + (p.halal ? 'on' : '') + '" data-action="halal" role="switch" aria-checked="' + (p.halal ? 'true' : 'false') + '" aria-label="할랄 전용"><i></i></button></div>' +
-             '<p class="muted">지금은 ' + (p.halal ? '할랄 인증 메뉴만' : '모든 메뉴를') + ' 대상으로 추천합니다.</p>';
+      body = t('<div class="switch-row"><span><b>할랄 음식만 보여주기</b>') +
+             t('<small>할랄 인증 또는 성분이 확인된 메뉴만 추천합니다.</small></span>') +
+             '<button class="switch ' + (p.halal ? 'on' : '') + '" data-action="halal" role="switch" aria-checked="' + (p.halal ? 'true' : 'false') + t('" aria-label="할랄 전용"><i></i></button></div>') +
+             t('<p class="muted">지금은 ') + (p.halal ? t('할랄 인증 메뉴만') : t('모든 메뉴를')) + t(' 대상으로 추천합니다.</p>');
     }
 
     var rail = '';
     for(var k=0;k<7;k++) rail += '<i class="' + (k <= state.step ? 'on' : '') + '"></i>';
 
-    var primary = state.editing ? '저장하고 돌아가기' : (state.step === 6 ? '추천 시작하기' : '다음');
+    var primary = state.editing ? t('저장하고 돌아가기') : (state.step === 6 ? t('추천 시작하기') : t('다음'));
 
     return '<div class="screen">' +
       '<div class="rail">' + rail + '</div>' +
@@ -1407,17 +1799,17 @@
         '<div class="q-body">' + body + '</div>' +
       '</div>' +
       '<div class="nav-bar">' +
-        (state.step > 0 && !state.editing ? '<button class="back" data-action="prev">이전</button>' : '') +
-        (state.editing ? '<button class="back" data-action="cancel-edit">취소</button>' : '') +
+        (state.step > 0 && !state.editing ? t('<button class="back" data-action="prev">이전</button>') : '') +
+        (state.editing ? t('<button class="back" data-action="cancel-edit">취소</button>') : '') +
         '<button class="cta" data-action="next"' + (stepValid() ? '' : ' disabled') + '>' + primary + '</button>' +
       '</div></div>';
   }
 
   var ANALYZE_STEPS = [
-    '비짓서울 API 음식 콘텐츠 불러오는 중',
-    '국적별 선호 통계 대조하는 중',
-    '알레르기 · 채식 · 할랄 조건으로 거르는 중',
-    'SNS 실시간 화제성 반영하는 중'
+    t('비짓서울 API 음식 콘텐츠 불러오는 중'),
+    t('국적별 선호 통계 대조하는 중'),
+    t('알레르기 · 채식 · 할랄 조건으로 거르는 중'),
+    t('현재 위치에서 가까운 순으로 정렬하는 중')
   ];
 
   function screenAnalyzing(){
@@ -1427,20 +1819,20 @@
     }).join('');
     return '<div class="screen analyze">' +
       '<div class="pot">' + character(state.profile.explore, state.profile.atmosphere, 96) + '</div>' +
-      '<h2>' + esc(natLabel(state.profile)) + ' 여행자 데이터와<br>맞춰보고 있어요</h2>' +
+      '<h2>' + esc(natLabel(state.profile)) + t(' 여행자 데이터와<br>맞춰보고 있어요</h2>') +
       '<div class="steps">' + steps + '</div></div>';
   }
 
   function tabs(active){
     var items = [
-      { key:'result', label:'내 유형', icon:ICON.user },
-      { key:'places', label:'주변 맛집', icon:ICON.pin },
-      { key:'guide', label:'유형 가이드', icon:ICON.grid },
-      { key:'profile', label:'내 조건', icon:ICON.gear }
+      { key:'result', label:t('내 유형'), icon:ICON.user },
+      { key:'places', label:t('주변 맛집'), icon:ICON.pin },
+      { key:'guide', label:t('유형 가이드'), icon:ICON.grid },
+      { key:'profile', label:t('내 조건'), icon:ICON.gear }
     ];
     return '<div class="tabs">' + items.map(function(it){
       return '<button class="tab ' + (active === it.key ? 'on' : '') + '" data-action="go" data-key="' + it.key + '">' +
-             it.icon + '<span>' + it.label + '</span></button>';
+             it.icon + '<span>' + t(it.label) + '</span></button>';
     }).join('') + '</div>';
   }
 
@@ -1459,36 +1851,37 @@
       return '<button class="place" data-action="menu" data-key="' + e.menu.id + '">' +
         '<div class="body"><div class="nm">' + esc(e.menu.name) + '</div>' +
         '<div class="loc">' + esc(e.menu.place) + ' · ' + esc(e.menu.gu) + '</div>' +
-        '<div class="walk"><b class="num">' + fmtDist(e.km) + '</b><span>걸어서 ' + walkMin(e.km) + '분</span></div>' +
+        '<div class="walk"><b class="num">' + fmtDist(e.km) + '</b><span>' + esc(tpl('walkMin', { min:walkMin(e.km) })) + '</span></div>' +
         '<div class="why"><span class="b">→</span><span>' + esc(topReasons(e, p, 1)[0]) + '</span></div></div>' +
         '<div class="match"><div class="pct">' + e.total + '</div><div class="lab">MATCH</div></div></button>';
     }).join('');
 
     return '<div class="screen">' +
-      (state.previewCombo ? '<div class="banner"><span>' + esc(per.title) + ' 유형으로 미리보는 중</span><button data-action="clear-preview">내 유형으로</button></div>' : '') +
+      (state.previewCombo ? '<div class="banner"><span>' + esc(t(per.title)) + t(' 유형으로 미리보는 중</span><button data-action="clear-preview">내 유형으로</button></div>') : '') +
       '<div class="scroll">' +
         '<div class="reveal">' +
           '<div class="char-frame">' + character(parts[0], parts[1], 132) + '</div>' +
-          '<div class="kicker">' + (state.previewCombo ? '다른 유형 미리보기' : '당신의 미식가 유형') + '</div>' +
-          '<h1>' + esc(per.title) + '</h1>' +
-          '<p class="tag">' + esc(per.tag) + '</p>' +
+          '<div class="kicker">' + (state.previewCombo ? t('다른 유형 미리보기') : t('당신의 미식가 유형')) + '</div>' +
+          '<h1>' + esc(t(per.title)) + '</h1>' +
+          '<p class="tag">' + esc(t(per.tag)) + '</p>' +
           '<div class="axis-pair"><span class="axis-pill">' + esc(exShort) + '</span><span class="axis-pill">' + esc(atShort) + '</span></div>' +
         '</div>' +
-        '<div class="sect"><p class="body-copy">' + esc(per.body) + '</p>' +
-          '<div class="kw-row" style="margin-top:14px">' + per.kw.map(function(k){ return '<span class="kw">' + esc(k) + '</span>'; }).join('') + '</div>' +
+        '<div class="sect"><p class="body-copy">' + esc(t(per.body)) + '</p>' +
+          '<div class="kw-row" style="margin-top:14px">' + per.kw.map(function(k){ return '<span class="kw">' + esc(t(k)) + '</span>'; }).join('') + '</div>' +
         '</div>' +
-        '<div class="sect"><h3 class="sect-title">입력한 조건</h3>' +
+        t('<div class="sect"><h3 class="sect-title">입력한 조건</h3>') +
           '<div class="stat-3">' +
-            '<div class="stat"><div class="k">국적</div><div class="v">' + esc(natLabel(p)) + '</div></div>' +
-            '<div class="stat"><div class="k">매운맛</div><div class="v num">' + p.spice + '/10</div></div>' +
-            '<div class="stat"><div class="k">분위기</div><div class="v">' + esc(atShort) + '</div></div>' +
+            t('<div class="stat"><div class="k">국적</div><div class="v">') + esc(natLabel(p)) + '</div></div>' +
+            t('<div class="stat"><div class="k">매운맛</div><div class="v num">') + p.spice + '/10</div></div>' +
+            t('<div class="stat"><div class="k">분위기</div><div class="v">') + esc(atShort) + '</div></div>' +
           '</div>' +
           '<div class="cohort" style="margin-top:12px"><span class="big">' + pct + '%</span>' +
-          '<p>같은 조건을 입력한 <b>' + esc(natLabel(p)) + '</b> 여행자 중 이 유형의 비율이에요.</p></div>' +
+          '<p>' + esc(tpl('cohort', { nat:natLabel(p) })) + '</p></div>' +
         '</div>' +
-        '<div class="sect"><h3 class="sect-title">' + esc(state.origin.label) + ' 주변 상위 추천</h3>' + preview +
-          '<button class="cta" style="margin-top:12px" data-action="go" data-key="places">지도에서 주변 ' + rec.list.length + '곳 보기</button>' +
-          '<button class="cta ghost" style="margin-top:8px" data-action="go" data-key="guide">9가지 유형 둘러보기</button>' +
+        '<div class="sect"><h3 class="sect-title">' + esc(state.origin.label) + t(' 주변 상위 추천</h3>') + preview +
+          '<button class="cta" style="margin-top:12px" data-action="go" data-key="places">' +
+            esc(tpl('mapCount', { n:rec.list.length })) + '</button>' +
+          t('<button class="cta ghost" style="margin-top:8px" data-action="go" data-key="guide">9가지 유형 둘러보기</button>') +
         '</div>' +
       '</div>' + tabs('result') + '</div>';
   }
@@ -1497,16 +1890,16 @@
 
   function placeCard(e, p, rank){
     var m = e.menu;
-    var tags = '<span class="tag">🌶️ ' + m.spice + '/10 추정</span>' +
-      '<span class="tag">' + esc(VIBE_LABEL[m.vibe] || '중간') + '</span>';
-    if(m.veganOk.length) tags += '<span class="tag veg">채식 가능</span>';
-    if(m.halal) tags += '<span class="tag halal">할랄</span>';
+    var tags = '<span class="tag">🌶️ ' + m.spice + t('/10 추정</span>') +
+      '<span class="tag">' + esc(t(VIBE_LABEL[m.vibe]) || t('중간')) + '</span>';
+    if(m.veganOk.length) tags += t('<span class="tag veg">채식 가능</span>');
+    if(m.halal) tags += t('<span class="tag halal">할랄</span>');
     var why = topReasons(e, p, 2);
     return '<button class="place ' + (state.selectedId === m.id ? 'sel' : '') + '" id="card-' + m.id + '" data-action="menu" data-key="' + m.id + '">' +
       (rank ? '<span class="rankdot">' + rank + '</span>' : '') +
       '<div class="body"><div class="nm">' + esc(m.name) + '</div>' +
       '<div class="loc">' + esc(m.place) + ' · ' + esc(m.gu) + '</div>' +
-      '<div class="walk"><b class="num">' + fmtDist(e.km) + '</b><span>걸어서 ' + walkMin(e.km) + '분</span></div>' +
+      '<div class="walk"><b class="num">' + fmtDist(e.km) + '</b><span>' + esc(tpl('walkMin', { min:walkMin(e.km) })) + '</span></div>' +
       why.map(function(w){ return '<div class="why"><span class="b">→</span><span>' + esc(w) + '</span></div>'; }).join('') +
       '<div class="tagrow">' + tags + '</div></div>' +
       '<div class="match"><div class="pct">' + e.total + '</div><div class="lab">MATCH</div></div></button>';
@@ -1515,12 +1908,12 @@
   function locPanel(){
     if(!state.showLoc) return '';
     var chips = ORIGINS.map(function(o){
-      return '<button class="chip ' + (state.origin.key === o.key ? 'on' : '') + '" data-action="origin" data-key="' + o.key + '">' + esc(o.label) + '</button>';
+      return '<button class="chip ' + (state.origin.key === o.key ? 'on' : '') + '" data-action="origin" data-key="' + o.key + '">' + esc(t(o.label)) + '</button>';
     }).join('');
     return '<div class="locpanel">' +
-      '<button class="cta ghost" data-action="geo">📍 지금 내 위치로 설정하기</button>' +
+      t('<button class="cta ghost" data-action="geo">📍 지금 내 위치로 설정하기</button>') +
       (state.geoMsg ? '<p class="muted" style="margin:9px 0 0">' + esc(state.geoMsg) + '</p>' : '') +
-      '<p class="muted" style="margin:12px 0 8px">또는 이동 거점에서 고르기</p>' +
+      t('<p class="muted" style="margin:12px 0 8px">또는 이동 거점에서 고르기</p>') +
       '<div class="chips">' + chips + '</div></div>';
   }
 
@@ -1538,15 +1931,15 @@
     if(rec.list.length){
       body = rec.list.map(function(e, i){ return placeCard(e, p, i + 1); }).join('');
     } else if(state.pool.status === 'loading'){
-      body = '<div class="empty-state">🔎 비짓서울 API에서 실제 음식 콘텐츠를 불러오는 중이에요…' +
+      body = '<div class="empty-state">' + esc(tpl('poolLoading', {})) +
         (state.pool.total ? '<br>' + state.pool.done + ' / ' + state.pool.total : '') + '</div>';
     } else if(state.pool.status === 'error'){
-      body = '<div class="empty-state"><b>비짓서울 API에서 데이터를 불러오지 못했어요.</b><br>' +
-        esc(state.pool.error || '') + '<br><button class="cta ghost" style="margin-top:12px" data-action="reload-pool">다시 시도하기</button></div>';
+      body = t('<div class="empty-state"><b>비짓서울 API에서 데이터를 불러오지 못했어요.</b><br>') +
+        esc(state.pool.error || '') + t('<br><button class="cta ghost" style="margin-top:12px" data-action="reload-pool">다시 시도하기</button></div>');
     } else {
       var nearest = rec.far[0];
-      body = '<div class="empty-state"><b>반경 ' + fmtRadius(state.radiusKm) + ' 안에는 조건에 맞는 곳이 없어요.</b>' +
-        (nearest ? '<br>가장 가까운 곳은 ' + esc(nearest.menu.name) + ' — ' + fmtDist(nearest.km) + ' 거리예요. 반경을 넓혀보세요.' : '') + '</div>' +
+      body = '<div class="empty-state"><b>' + esc(tpl('emptyRadius', { r:fmtRadius(state.radiusKm) })) + '</b>' +
+        (nearest ? t('<br>가장 가까운 곳은 ') + esc(nearest.menu.name) + ' — ' + fmtDist(nearest.km) + t(' 거리예요. 반경을 넓혀보세요.') : '') + '</div>' +
         (nearest ? placeCard(nearest, p, null) : '');
     }
 
@@ -1554,37 +1947,37 @@
     var notes = '';
     if(offCount){
       notes = '<button class="offnote" data-action="toggle-off">' +
-        '<span>제외된 ' + offCount + '곳 · 반경 밖 ' + rec.far.length + ' · 조건 불일치 ' + rec.blocked.length + '</span>' +
-        '<span class="chev">' + (state.showOff ? '접기' : '보기') + '</span></button>';
+        t('<span>제외된 ') + offCount + t('곳 · 반경 밖 ') + rec.far.length + t(' · 조건 불일치 ') + rec.blocked.length + '</span>' +
+        '<span class="chev">' + (state.showOff ? t('접기') : t('보기')) + '</span></button>';
       if(state.showOff){
         notes += '<div class="offlist">' +
           rec.blocked.map(function(b){
             return '<div class="offrow"><span>' + esc(b.menu.name) + '</span><span class="r">' + esc(b.why) + '</span></div>';
           }).join('') +
           rec.far.map(function(f){
-            return '<div class="offrow"><span>' + esc(f.menu.name) + '</span><span class="r">' + fmtDist(f.km) + ' · 반경 밖</span></div>';
+            return '<div class="offrow"><span>' + esc(f.menu.name) + '</span><span class="r">' + fmtDist(f.km) + t(' · 반경 밖</span></div>');
           }).join('') + '</div>';
       }
     }
 
     return '<div class="screen">' +
-      (state.previewCombo ? '<div class="banner"><span>' + esc(per.title) + ' 유형 기준 추천</span><button data-action="clear-preview">내 유형으로</button></div>' : '') +
+      (state.previewCombo ? '<div class="banner"><span>' + esc(t(per.title)) + t(' 유형 기준 추천</span><button data-action="clear-preview">내 유형으로</button></div>') : '') +
       '<div class="scroll">' +
         '<div class="locbar"><button class="locbtn" data-action="toggle-loc">' +
-          '<span class="pinico">📍</span><span class="l"><span class="k">현재 위치' + (state.origin.live ? ' · GPS' : '') + '</span>' +
-          '<span class="v">' + esc(state.origin.label) + '</span></span>' +
-          '<span class="chev">' + (state.showLoc ? '닫기' : '변경') + '</span></button>' + locPanel() + '</div>' +
+          t('<span class="pinico">📍</span><span class="l"><span class="k">현재 위치') + (state.origin.live ? ' · GPS' : '') + '</span>' +
+          '<span class="v">' + esc(t(state.origin.label)) + '</span></span>' +
+          '<span class="chev">' + (state.showLoc ? t('닫기') : t('변경')) + '</span></button>' + locPanel() + '</div>' +
         '<div class="mapwrap"><div id="kmap-places" style="width:100%;height:248px"></div></div>' +
-        '<div class="radrow"><span class="muted">반경</span>' + radChips +
-          '<span class="cnt num">' + rec.list.length + '곳</span></div>' +
+        t('<div class="radrow"><span class="muted">반경</span>') + radChips +
+          '<span class="cnt num">' + rec.list.length + t('곳</span></div>') +
         '<div class="pad" style="padding-top:14px">' +
-          '<h2 class="display" style="font-size:20px;margin:0 0 4px">' + esc(per.title) + '에게 가까운 순서</h2>' +
-          '<p class="muted" style="margin:0 0 13px">매치도 = 국적 선호 28% · 매운맛 22% · <b>거리 20%</b> · 탐색 성향 16% · 분위기 14%</p>' +
+          '<h2 class="display" style="font-size:20px;margin:0 0 4px">' + esc(tpl('nearOrder', { persona:t(per.title) })) + '</h2>' +
+          t('<p class="muted" style="margin:0 0 13px">매치도 = 국적 선호 28% · 매운맛 22% · <b>거리 20%</b> · 탐색 성향 16% · 분위기 14%</p>') +
           (state.pool.status === 'loading' && rec.list.length
-            ? '<p class="fine" style="margin:0 0 10px">🔎 비짓서울 API에서 불러오는 중 — ' + state.pool.done + ' / ' + state.pool.total + '곳</p>' : '') +
+            ? t('<p class="fine" style="margin:0 0 10px">🔎 비짓서울 API에서 불러오는 중 — ') + state.pool.done + ' / ' + state.pool.total + t('곳</p>') : '') +
           notes +
           '<div style="margin-top:12px">' + body + '</div>' +
-          '<p class="fine" style="margin-top:16px">목록에 뜨는 곳은 모두 비짓서울 API에 실제로 등록된 콘텐츠이고, 지도의 위치는 API가 준 실제 좌표입니다(OpenStreetMap). 거리·도보 시간은 직선거리 기준 추정값이며, 매운맛·알레르기는 이름·대표 메뉴에서 추정한 값입니다.</p>' +
+          t('<p class="fine" style="margin-top:16px">목록에 뜨는 곳은 모두 비짓서울 API에 실제로 등록된 콘텐츠이고, 지도의 위치는 API가 준 실제 좌표입니다(OpenStreetMap). 거리·도보 시간은 직선거리 기준 추정값이며, 매운맛·알레르기는 이름·대표 메뉴에서 추정한 값입니다.</p>') +
         '</div>' +
       '</div>' + tabs('places') + '</div>';
   }
@@ -1596,15 +1989,15 @@
     var e = scoreMenu(m, p);
 
     var bars = WEIGHTS.map(function(w){
-      return '<div class="bar-row"><div class="top"><b>' + esc(w.label) + '</b>' +
+      return '<div class="bar-row"><div class="top"><b>' + esc(t(w.label)) + '</b>' +
         '<span class="w">' + e.parts[w.key] + ' × ' + Math.round(w.w * 100) + '%</span></div>' +
         '<div class="track"><div class="fill ' + w.cls + '" style="width:' + e.parts[w.key] + '%"></div></div></div>';
     }).join('');
 
-    var alg = m.allergens.map(function(a){ return ALLERGEN_LABEL[a] || a; }).join(', ') || '추정된 성분 없음';
+    var alg = m.allergens.map(function(a){ return t(ALLERGEN_LABEL[a]) || a; }).join(', ') || t('추정된 성분 없음');
     var vegLine = m.veganOk.length
-      ? (m.dietaryLabels && m.dietaryLabels.length ? m.dietaryLabels.join(', ') : '채식 관련 표기 있음')
-      : '채식 정보 없음';
+      ? (m.dietaryLabels && m.dietaryLabels.length ? m.dietaryLabels.join(', ') : t('채식 관련 표기 있음'))
+      : t('채식 정보 없음');
 
     var others = recommend(p).list.filter(function(x){ return x.menu.id !== m.id; }).slice(0, 2).map(function(x){
       return '<button class="place" data-action="menu" data-key="' + x.menu.id + '">' +
@@ -1614,7 +2007,7 @@
     }).join('');
 
     return '<div class="screen"><div class="scroll">' +
-      '<div class="topbar"><button data-action="go" data-key="places" aria-label="뒤로">' + ICON.back + '</button>' +
+      t('<div class="topbar"><button data-action="go" data-key="places" aria-label="뒤로">') + ICON.back + '</button>' +
       '<h3>' + esc(m.name) + '</h3></div>' +
       '<div class="hero-fig" style="background:' + AXIS_WASH[p.explore] + '">' +
         '<div style="text-align:center"><div class="num" style="font-size:38px;color:var(--red);line-height:1">' + e.total + '</div>' +
@@ -1622,24 +2015,24 @@
       '</div>' +
       '<div class="sect"><div class="muted" style="font-size:11.5px">' + esc(m.place) + ' · ' + esc(m.gu) + ' · ' + esc(m.cat) + '</div>' +
         '<p class="body-copy" style="margin-top:9px">' + esc(m.blurb) + '</p></div>' +
-      '<div class="sect"><h3 class="sect-title">여기서 가는 길</h3>' +
+      t('<div class="sect"><h3 class="sect-title">여기서 가는 길</h3>') +
         '<div class="mapwrap mini"><div id="kmap-menu" style="width:100%;height:180px"></div></div>' +
-        '<div class="kv" style="margin-top:4px"><span class="k">' + esc(state.origin.label) + '에서</span>' +
-        '<span class="v num">' + fmtDist(e.km) + ' · 도보 ' + walkMin(e.km) + '분</span></div>' +
-        '<p class="fine" style="margin-top:8px">📍 비짓서울 API가 제공한 실제 좌표(' + m.lat.toFixed(5) + ', ' + m.lng.toFixed(5) + ')로 표시했습니다.</p></div>' +
-      '<div class="sect"><h3 class="sect-title">이 점수가 나온 이유</h3><div class="bars">' + bars + '</div></div>' +
-      '<div class="sect"><h3 class="sect-title">내 조건과 대조</h3>' +
-        '<div class="kv"><span class="k">거리</span><span class="v num">' + fmtDist(e.km) + ' (반경 ' + fmtRadius(state.radiusKm) + ' 기준)</span></div>' +
-        '<div class="kv"><span class="k">' + esc(natLabel(p)) + ' 여행자 선호도</span><span class="v num">' + e.parts.nat + ' / 100</span></div>' +
-        '<div class="kv"><span class="k">매운 정도</span><span class="v num">' + m.spice + ' / 10 (내 기준 ' + p.spice + ')</span></div>' +
-        '<div class="kv"><span class="k">알레르기 유발 성분</span><span class="v">' + esc(alg) + '</span></div>' +
-        '<div class="kv"><span class="k">채식</span><span class="v ' + (m.veganOk.length ? 'ok' : '') + '">' + esc(vegLine) + '</span></div>' +
-        '<div class="kv"><span class="k">할랄</span><span class="v ' + (m.halal ? 'ok' : 'no') + '">' + (m.halal ? '관련 표기 있음' : '정보 없음') + '</span></div>' +
+        '<div class="kv" style="margin-top:4px"><span class="k">' + esc(tpl('fromOrigin', { origin:t(state.origin.label) })) + '</span>' +
+        '<span class="v num">' + esc(tpl('distWalk', { dist:fmtDist(e.km), min:walkMin(e.km) })) + '</span></div>' +
+        t('<p class="fine" style="margin-top:8px">📍 비짓서울 API가 제공한 실제 좌표(') + m.lat.toFixed(5) + ', ' + m.lng.toFixed(5) + t(')로 표시했습니다.</p></div>') +
+      t('<div class="sect"><h3 class="sect-title">이 점수가 나온 이유</h3><div class="bars">') + bars + '</div></div>' +
+      t('<div class="sect"><h3 class="sect-title">내 조건과 대조</h3>') +
+        t('<div class="kv"><span class="k">거리</span><span class="v num">') + esc(tpl('radiusBasis', { dist:fmtDist(e.km), r:fmtRadius(state.radiusKm) })) + '</span></div>' +
+        '<div class="kv"><span class="k">' + esc(tpl('natPref', { nat:natLabel(p) })) + '</span><span class="v num">' + e.parts.nat + ' / 100</span></div>' +
+        t('<div class="kv"><span class="k">매운 정도</span><span class="v num">') + esc(tpl('spiceMine', { v:m.spice, mine:p.spice })) + '</span></div>' +
+        t('<div class="kv"><span class="k">알레르기 유발 성분</span><span class="v">') + esc(alg) + '</span></div>' +
+        t('<div class="kv"><span class="k">채식</span><span class="v ') + (m.veganOk.length ? 'ok' : '') + '">' + esc(vegLine) + '</span></div>' +
+        t('<div class="kv"><span class="k">할랄</span><span class="v ') + (m.halal ? 'ok' : 'no') + '">' + (m.halal ? t('관련 표기 있음') : t('정보 없음')) + '</span></div>' +
       '</div>' +
-      '<p class="fine" style="margin:0 16px">매운맛·알레르기 성분은 비짓서울 API에 없는 항목이라, 가게 이름·대표 메뉴·태그를 기준으로 <b>추정</b>한 값입니다. 할랄·채식은 API가 제공하는 표기를 그대로 씁니다.</p>' +
-      (m.tip ? '<div class="sect"><h3 class="sect-title">대표 메뉴</h3><div class="tipbox">' + esc(m.tip) + '</div></div>' : '') +
-      '<div class="sect"><h3 class="sect-title">비짓서울 원본 데이터</h3>' + rawDataSectionHtml(m) + '</div>' +
-      '<div class="sect"><h3 class="sect-title">다음 한 입</h3>' + others + '</div>' +
+      t('<p class="fine" style="margin:0 16px">매운맛·알레르기 성분은 비짓서울 API에 없는 항목이라, 가게 이름·대표 메뉴·태그를 기준으로 <b>추정</b>한 값입니다. 할랄·채식은 API가 제공하는 표기를 그대로 씁니다.</p>') +
+      (m.tip ? t('<div class="sect"><h3 class="sect-title">대표 메뉴</h3><div class="tipbox">') + esc(m.tip) + '</div></div>' : '') +
+      t('<div class="sect"><h3 class="sect-title">비짓서울 원본 데이터</h3>') + rawDataSectionHtml(m) + '</div>' +
+      t('<div class="sect"><h3 class="sect-title">다음 한 입</h3>') + others + '</div>' +
       '</div>' + tabs('places') + '</div>';
   }
 
@@ -1652,17 +2045,17 @@
         var isMine = key === mine;
         return '<button class="type-row ' + (isMine ? 'mine' : '') + '" data-action="type" data-key="' + key + '">' +
           '<span class="avatar" style="background:' + AXIS_WASH[ex.key] + '">' + character(ex.key, at.key, 44) + '</span>' +
-          '<span class="info"><span class="nm">' + esc(per.title) + (isMine ? '<span class="mine-badge">내 유형</span>' : '') + '</span>' +
-          '<span class="sub">' + esc(per.tag) + '</span></span></button>';
+          '<span class="info"><span class="nm">' + esc(t(per.title)) + (isMine ? t('<span class="mine-badge">내 유형</span>') : '') + '</span>' +
+          '<span class="sub">' + esc(t(per.tag)) + '</span></span></button>';
       }).join('');
       return '<div class="type-group"><div class="group-head">' +
         '<span class="swatch" style="background:' + AXIS_COLOR[ex.key] + '"></span>' +
-        '<b>' + esc(ex.short) + '</b><small>' + esc(ex.sub) + '</small></div>' + rows + '</div>';
+        '<b>' + esc(t(ex.short)) + '</b><small>' + esc(t(ex.sub)) + '</small></div>' + rows + '</div>';
     }).join('');
 
     return '<div class="screen"><div class="scroll"><div class="pad">' +
-      '<h2 class="display" style="font-size:22px;margin:0 0 4px">9가지 미식가 유형</h2>' +
-      '<p class="muted" style="margin:0 0 18px">새로운 메뉴를 고르는 방식(가로 축)과 선호하는 식당 분위기(세로 축)를 조합해 아홉 가지가 나옵니다. 눌러서 다른 유형의 추천도 볼 수 있어요.</p>' +
+      t('<h2 class="display" style="font-size:22px;margin:0 0 4px">9가지 미식가 유형</h2>') +
+      t('<p class="muted" style="margin:0 0 18px">새로운 메뉴를 고르는 방식(가로 축)과 선호하는 식당 분위기(세로 축)를 조합해 아홉 가지가 나옵니다. 눌러서 다른 유형의 추천도 볼 수 있어요.</p>') +
       groups + '</div></div>' + tabs('guide') + '</div>';
   }
 
@@ -1675,48 +2068,49 @@
     var atShort = ATMOS.filter(function(a){ return a.key === parts[1]; })[0];
 
     return '<div class="screen"><div class="scroll">' +
-      '<div class="topbar"><button data-action="go" data-key="guide" aria-label="뒤로">' + ICON.back + '</button><h3>미식가 유형</h3></div>' +
+      t('<div class="topbar"><button data-action="go" data-key="guide" aria-label="뒤로">') + ICON.back + t('</button><h3>미식가 유형</h3></div>') +
       '<div class="reveal">' +
         '<div class="char-frame">' + character(parts[0], parts[1], 124) + '</div>' +
-        '<div class="kicker">' + (isMine ? '내 유형' : '유형 소개') + '</div>' +
-        '<h1>' + esc(per.title) + '</h1><p class="tag">' + esc(per.tag) + '</p>' +
-        '<div class="axis-pair"><span class="axis-pill">' + esc(exShort.short) + '</span><span class="axis-pill">' + esc(atShort.short) + '</span></div>' +
+        '<div class="kicker">' + (isMine ? t('내 유형') : t('유형 소개')) + '</div>' +
+        '<h1>' + esc(t(per.title)) + '</h1><p class="tag">' + esc(t(per.tag)) + '</p>' +
+        '<div class="axis-pair"><span class="axis-pill">' + esc(t(exShort.short)) + '</span><span class="axis-pill">' + esc(t(atShort.short)) + '</span></div>' +
       '</div>' +
-      '<div class="sect"><p class="body-copy">' + esc(per.body) + '</p>' +
-        '<div class="kw-row" style="margin-top:14px">' + per.kw.map(function(k){ return '<span class="kw">' + esc(k) + '</span>'; }).join('') + '</div></div>' +
-      '<div class="sect"><h3 class="sect-title">이 유형의 기준</h3>' +
-        '<div class="kv"><span class="k">메뉴 선택</span><span class="v">' + esc(exShort.label) + '</span></div>' +
-        '<div class="kv"><span class="k">식당 분위기</span><span class="v">' + esc(atShort.label) + '</span></div></div>' +
+      '<div class="sect"><p class="body-copy">' + esc(t(per.body)) + '</p>' +
+        '<div class="kw-row" style="margin-top:14px">' + per.kw.map(function(k){ return '<span class="kw">' + esc(t(k)) + '</span>'; }).join('') + '</div></div>' +
+      t('<div class="sect"><h3 class="sect-title">이 유형의 기준</h3>') +
+        t('<div class="kv"><span class="k">메뉴 선택</span><span class="v">') + esc(exShort.label) + '</span></div>' +
+        t('<div class="kv"><span class="k">식당 분위기</span><span class="v">') + esc(atShort.label) + '</span></div></div>' +
       '<div class="sect">' +
         (isMine
-          ? '<button class="cta" data-action="go" data-key="places">내 추천 맛집 보기</button>'
-          : '<button class="cta" data-action="preview" data-key="' + key + '">이 유형 기준으로 추천 보기</button>' +
-            '<p class="fine" style="margin-top:9px">내 조건(국적·매운맛·알레르기)은 그대로 두고, 이 유형의 성향만 적용해 다시 계산합니다.</p>') +
+          ? t('<button class="cta" data-action="go" data-key="places">내 추천 맛집 보기</button>')
+          : '<button class="cta" data-action="preview" data-key="' + key + t('">이 유형 기준으로 추천 보기</button>') +
+            t('<p class="fine" style="margin-top:9px">내 조건(국적·매운맛·알레르기)은 그대로 두고, 이 유형의 성향만 적용해 다시 계산합니다.</p>')) +
       '</div></div>' + tabs('guide') + '</div>';
   }
 
   function screenProfile(){
     var p = state.profile;
     var rows = [
-      { k:'국적', v:natLabel(p), step:0 },
-      { k:'메뉴 선택 성향', v:EXPLORE.filter(function(e){ return e.key === p.explore; })[0].label, step:1 },
-      { k:'식당 분위기', v:ATMOS.filter(function(a){ return a.key === p.atmosphere; })[0].label, step:2 },
-      { k:'매운맛', v:p.spice + ' / 10', step:3 },
-      { k:'알레르기 · 못 먹는 재료', v:p.noAllergy ? '없음' :
-          p.allergens.map(function(a){ return ALLERGEN_LABEL[a]; }).concat(p.customAllergens).join(', '), step:4 },
-      { k:'채식', v:p.veganNone ? '해당없음' : p.vegan.map(function(v){ return VEGAN_LABEL[v]; }).join(', '), step:5 },
-      { k:'할랄', v:p.halal ? '할랄 인증 메뉴만' : '제한 없음', step:6 }
+      { k:t('국적'), v:natLabel(p), step:0 },
+      { k:t('메뉴 선택 성향'), v:t(EXPLORE.filter(function(e){ return e.key === p.explore; })[0].label), step:1 },
+      { k:t('식당 분위기'), v:t(ATMOS.filter(function(a){ return a.key === p.atmosphere; })[0].label), step:2 },
+      { k:t('매운맛'), v:p.spice + ' / 10', step:3 },
+      { k:t('알레르기 · 못 먹는 재료'), v:p.noAllergy ? t('없음') :
+          p.allergens.map(function(a){ return t(ALLERGEN_LABEL[a]); }).concat(p.customAllergens).join(', '), step:4 },
+      { k:t('채식'), v:p.veganNone ? t('해당없음') : p.vegan.map(function(v){ return t(VEGAN_LABEL[v]); }).join(', '), step:5 },
+      { k:t('할랄'), v:p.halal ? t('할랄 인증 메뉴만') : t('제한 없음'), step:6 }
     ];
     return '<div class="screen"><div class="scroll"><div class="pad">' +
-      '<h2 class="display" style="font-size:22px;margin:0 0 4px">내 조건</h2>' +
-      '<p class="muted" style="margin:0 0 8px">값을 바꾸면 유형과 추천이 즉시 다시 계산됩니다.</p>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">' +
+        t('<h2 class="display" style="font-size:22px;margin:0">내 조건</h2>') + langSwitchHtml() + '</div>' +
+      t('<p class="muted" style="margin:0 0 8px">값을 바꾸면 유형과 추천이 즉시 다시 계산됩니다.</p>') +
       rows.map(function(r){
         return '<div class="prow"><span class="l"><span class="k">' + esc(r.k) + '</span>' +
           '<span class="v">' + esc(r.v || '—') + '</span></span>' +
-          '<button class="btn-sm" data-action="edit" data-key="' + r.step + '">수정</button></div>';
+          '<button class="btn-sm" data-action="edit" data-key="' + r.step + t('">수정</button></div>');
       }).join('') +
-      '<button class="cta ghost" style="margin-top:20px" data-action="reset">처음부터 다시 하기</button>' +
-      '<p class="fine" style="margin-top:14px">2026 서울관광재단 비짓서울 API 데이터·AI 활용 아이디어 공모전 · 미식 프로파일러 프로토타입. 메뉴 데이터는 비짓서울 API 음식 콘텐츠 구조를 본뜬 샘플입니다.</p>' +
+      t('<button class="cta ghost" style="margin-top:20px" data-action="reset">처음부터 다시 하기</button>') +
+      t('<p class="fine" style="margin-top:14px">2026 서울관광재단 비짓서울 API 데이터·AI 활용 아이디어 공모전 · 미식 프로파일러 프로토타입. 모든 장소 데이터는 비짓서울 API 실시간 응답입니다.</p>') +
       '</div></div>' + tabs('profile') + '</div>';
   }
 
@@ -1765,21 +2159,21 @@
 
   function requestGeo(){
     if(!navigator.geolocation){
-      state.geoMsg = '이 브라우저에서는 위치를 가져올 수 없어요. 아래에서 거점을 골라주세요.';
+      state.geoMsg = t('이 브라우저에서는 위치를 가져올 수 없어요. 아래에서 거점을 골라주세요.');
       state.keepScroll = true; render(); return;
     }
-    state.geoMsg = '위치를 확인하는 중…';
+    state.geoMsg = t('위치를 확인하는 중…');
     state.keepScroll = true; render();
     navigator.geolocation.getCurrentPosition(function(pos){
       var la = pos.coords.latitude, ln = pos.coords.longitude;
       var inSeoul = la > 37.41 && la < 37.71 && ln > 126.76 && ln < 127.19;
-      state.origin = { key:'live', label:inSeoul ? '현재 위치' : '현재 위치 (서울 밖)', lat:la, lng:ln, live:true };
-      state.geoMsg = inSeoul ? '' : '서울 밖이라 반경 안에 결과가 없을 수 있어요. 거점을 골라 데모로 볼 수 있습니다.';
+      state.origin = { key:'live', label:inSeoul ? t('현재 위치') : t('현재 위치 (서울 밖)'), lat:la, lng:ln, live:true };
+      state.geoMsg = inSeoul ? '' : t('서울 밖이라 반경 안에 결과가 없을 수 있어요. 거점을 골라 데모로 볼 수 있습니다.');
       state.showLoc = !inSeoul;
       state.selectedId = null;
       state.keepScroll = true; render();
     }, function(){
-      state.geoMsg = '위치 권한이 없어요. 아래에서 거점을 골라주세요.';
+      state.geoMsg = t('위치 권한이 없어요. 아래에서 거점을 골라주세요.');
       state.keepScroll = true; render();
     }, { timeout:8000, maximumAge:60000 });
   }
@@ -1928,6 +2322,9 @@
       case 'clear-preview':
         state.previewCombo = null; render(); break;
 
+      case 'lang':
+        setLang(key); break;
+
       case 'reload-pool':
         state.pool.status = 'idle';
         loadRealPlaces(true);
@@ -1937,7 +2334,7 @@
       case 'reload-raw':
         state.rawCache[key] = { loading:true };
         state.keepScroll = true; render();
-        fetch('/api/contents/' + encodeURIComponent(key))
+        fetch('/api/contents/' + encodeURIComponent(key) + '?lang_code_id=' + apiLang())
           .then(function(r){ return r.json(); })
           .then(function(d){
             var info = d && d.ok && d.data && d.data.data;
@@ -1949,9 +2346,9 @@
               }
               var now = new Date();
               state.rawCache[key] = { ok:true, name:info.post_sj || key,
-                at: now.getHours() + '시 ' + ('0' + now.getMinutes()).slice(-2) + '분' };
+                at: now.getHours() + t('시 ') + ('0' + now.getMinutes()).slice(-2) + t('분') };
             } else {
-              state.rawCache[key] = { ok:false, message:(d && d.message) || '응답에 데이터가 없어요' };
+              state.rawCache[key] = { ok:false, message:(d && d.message) || t('응답에 데이터가 없어요') };
             }
             state.keepScroll = true; render();
           })
@@ -1989,6 +2386,10 @@
     }
   });
 
+  try{
+    var savedLang = localStorage.getItem('tastematch.lang');
+    if(savedLang === 'en' || savedLang === 'ko') state.lang = savedLang;
+  }catch(e){}
   loadRealPlaces();
   render();
 })();

@@ -38,7 +38,7 @@ var I18N_EN = {
   "도장을 찍을 수 있어요":"You can stamp this one",
   "현재 위치를 켜면 실제로 도장을 찍을 수 있어요":"Turn on your location to stamp for real",
   "여기에 도장 찍기":"Stamp this place",
-  "데모로 찍어보기 (심사용)":"Stamp in demo mode (for reviewers)",
+  "데모로 찍어보기":"Stamp in demo mode",
   "현재 위치 켜기":"Turn on my location",
   "도장을 찍었어요":"Stamped",
   "데모로 찍은 도장입니다":"Stamped in demo mode",

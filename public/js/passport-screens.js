@@ -184,7 +184,7 @@ export function screenToday(){
         '<button class="cta stampbtn" data-action="stamp" data-key="' + esc(m.cid) + '"' +
           (chk.ok ? '' : ' disabled') + '>' + t('여기에 도장 찍기') + '</button>' +
         '<button class="cta ghost" style="margin-top:9px" data-action="stamp-demo" data-key="' + esc(m.cid) + '">' +
-          t('데모로 찍어보기 (심사용)') + '</button>' +
+          t('데모로 찍어보기') + '</button>' +
         '<button class="cta ghost" style="margin-top:9px" data-action="skip">' +
           esc(tpl('otherPlace', { n: pick.remaining })) + '</button>' +
         '<button class="cta ghost" style="margin-top:9px" data-action="geo">' + t('현재 위치 켜기') + '</button>' +
